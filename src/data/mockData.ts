@@ -1,18 +1,40 @@
 // Mock data — high-ticket FR Google Ads opportunities
 // Aligned with EcomBoss methodology: high intent, evergreen, offline-scarce, marge >200€
 
+export type MaturityStage = "Emerging" | "Growth" | "Mature" | "Saturated";
+
+export type MacroNiche = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // emoji
+  subNicheCount: number;
+  avgOpportunity: number;
+  totalDemand: number; // monthly FR
+  momentum: number; // -100..+100
+};
+
 export type SubNiche = {
   id: string;
   name: string;
+  macroId: string;
   category: string;
   searchDemand: number; // monthly FR searches
-  cpc: number; // estimated CPC €
+  cpc: number;
   competition: "Low" | "Medium" | "High";
   stability: "Evergreen" | "Saisonnier" | "Trending";
-  marginPotential: number; // € avg
+  marginPotential: number;
   opportunityScore: number; // 0-100
   mode: "validated" | "hidden";
-  trend: number[]; // sparkline 12 pts
+  trend: number[]; // 12 pts demand
+  // continuous monitoring signals
+  demandGrowth90d: number; // % change last 90d
+  competitionShift: number; // -100..+100 (negative = competitors leaving = opportunity)
+  maturity: MaturityStage;
+  emergingClusters: string[]; // new search clusters detected
+  hiddenSignal?: string; // why hidden / under-the-radar
+  watchlist: boolean; // currently gaining traction FR
+  lastSignalAt: string; // ISO date
 };
 
 export type Product = {
