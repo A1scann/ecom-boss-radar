@@ -1,6 +1,6 @@
 // Niche Discovery Engine — turn a seed keyword into a sub-niche with
 // full scoring (live SerpApi calls + scoring engine).
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 import { z } from "https://esm.sh/zod@3.23.8";
 import { admin, trendsFR, trendsRelated, autocomplete, googleSerp, shoppingSerp } from "../_shared/serpapi.ts";
 import * as S from "../_shared/scoring.ts";

@@ -1,5 +1,5 @@
 // Keyword Intent Miner — autocomplete + related + PAA → buyer-intent keywords
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 import { z } from "https://esm.sh/zod@3.23.8";
 import { autocomplete, trendsRelated, googleSerp } from "../_shared/serpapi.ts";
 import { commercialIntent } from "../_shared/scoring.ts";

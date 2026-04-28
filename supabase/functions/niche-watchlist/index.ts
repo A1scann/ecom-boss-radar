@@ -1,6 +1,6 @@
 // Niche Watchlist refresher — re-scores all persisted sub-niches and
 // returns those gaining traction in France.
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 import { admin } from "../_shared/serpapi.ts";
 
 Deno.serve(async (req) => {
