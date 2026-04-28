@@ -1,10 +1,11 @@
-import { LayoutDashboard, Radar, Package, Target, Sparkles, Eye, Bookmark } from "lucide-react";
+import { LayoutDashboard, Radar, Package, Target, Sparkles, Eye, Bookmark, Zap } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/niches", label: "Niche Radar", icon: Radar },
+  { to: "/live", label: "Live Intelligence", icon: Zap, badge: "LIVE" },
   { to: "/products", label: "Product Finder", icon: Package },
   { to: "/scoring", label: "Scoring Engine", icon: Target },
   { to: "/angles", label: "Offer Angles", icon: Sparkles },
@@ -27,7 +28,7 @@ export const Sidebar = () => {
         </div>
       </div>
       <nav className="flex-1 p-3 space-y-1">
-        {items.map(({ to, label, icon: Icon }) => (
+        {items.map(({ to, label, icon: Icon, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -42,7 +43,12 @@ export const Sidebar = () => {
             }
           >
             <Icon className="w-4 h-4" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {badge && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />{badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
