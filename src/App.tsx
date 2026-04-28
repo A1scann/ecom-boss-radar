@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ShortlistProvider } from "@/store/shortlist";
 import Dashboard from "./pages/Dashboard";
 import NicheRadar from "./pages/NicheRadar";
+import SubNicheDetail from "./pages/SubNicheDetail";
 import ProductFinder from "./pages/ProductFinder";
 import ScoringEngine from "./pages/ScoringEngine";
 import OfferAngles from "./pages/OfferAngles";
@@ -27,6 +28,7 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/niches" element={<NicheRadar />} />
+              <Route path="/niches/:id" element={<SubNicheDetail />} />
               <Route path="/products" element={<ProductFinder />} />
               <Route path="/scoring" element={<ScoringEngine />} />
               <Route path="/angles" element={<OfferAngles />} />
