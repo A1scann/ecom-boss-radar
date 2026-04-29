@@ -407,7 +407,7 @@ const SubNicheDetail = () => {
           <p className="text-xs text-muted-foreground">Explorer les produits à fort potentiel détectés dans cette sub-niche.</p>
         </div>
         <Button asChild>
-          <Link to={`/products?niche=${niche.id}`}>
+          <Link to={`/products?niche=${niche.id}&slug=${niche.slug ?? ""}&seed=${encodeURIComponent(niche.name)}`}>
             <Package className="w-4 h-4 mr-2" /> Trouver des produits dans cette niche
           </Link>
         </Button>
