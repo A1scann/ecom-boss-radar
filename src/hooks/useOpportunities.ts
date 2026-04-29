@@ -122,3 +122,10 @@ export async function expandNiche(opts: { mode: ExpandMode; parentId?: string; m
   if (data?.error) throw new Error(JSON.stringify(data.error));
   return data;
 }
+
+export async function discoverNiche(opts: { seed: string; macroSlug?: string }) {
+  const { data, error } = await supabase.functions.invoke("niche-discover", { body: { ...opts, persist: true } });
+  if (error) throw error;
+  if (data?.error) throw new Error(JSON.stringify(data.error));
+  return data;
+}
