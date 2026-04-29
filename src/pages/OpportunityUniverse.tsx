@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMacros, useOpportunities, useEdges, expandNiche, defaultFilters, type Filters, type Mode, type ExpandMode } from "@/hooks/useOpportunities";
+import { useMacros, useOpportunities, useEdges, expandNiche, discoverNiche, defaultFilters, type Filters, type Mode, type ExpandMode } from "@/hooks/useOpportunities";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
