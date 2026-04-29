@@ -112,6 +112,32 @@ export default function OpportunityUniverse() {
         }
       />
 
+      {/* Seed discovery bar — calls niche-discover */}
+      <div className="rounded-xl border border-primary/30 bg-gradient-radial p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Découverte live</span>
+        </div>
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Découvrir une nouvelle niche… (ex : pergola bioclimatique, vélo cargo électrique)"
+            value={seed}
+            onChange={(e) => setSeed(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") runDiscover(); }}
+            className="pl-9 h-10 bg-background/60"
+            disabled={discovering}
+          />
+        </div>
+        <Button onClick={runDiscover} disabled={discovering || seed.trim().length < 2} className="shrink-0">
+          {discovering ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
+          Analyser & scorer
+        </Button>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Opportunités totales" value={stats.total.toLocaleString("fr-FR")} hint={`${opportunities.length} affichées`} accent />
         <StatCard label="Watchlist FR" value={stats.watchlist} hint="momentum confirmé" />
