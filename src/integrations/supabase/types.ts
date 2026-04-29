@@ -220,6 +220,84 @@ export type Database = {
           },
         ]
       }
+      products_live: {
+        Row: {
+          advertiser_count: number | null
+          buy_price_estimate: number | null
+          buying_intent: number | null
+          competition_difficulty: number | null
+          competitors: Json | null
+          created_at: string
+          data_source: string | null
+          id: string
+          last_signal_at: string
+          margin_potential: number | null
+          max_price: number | null
+          median_price: number | null
+          min_price: number | null
+          name: string
+          offline_scarcity: number | null
+          opportunity_score: number | null
+          sell_price_estimate: number | null
+          source_url: string | null
+          sub_niche_id: string | null
+          sub_niche_slug: string
+          thumbnail: string | null
+          updated_at: string
+          verdict: string | null
+        }
+        Insert: {
+          advertiser_count?: number | null
+          buy_price_estimate?: number | null
+          buying_intent?: number | null
+          competition_difficulty?: number | null
+          competitors?: Json | null
+          created_at?: string
+          data_source?: string | null
+          id?: string
+          last_signal_at?: string
+          margin_potential?: number | null
+          max_price?: number | null
+          median_price?: number | null
+          min_price?: number | null
+          name: string
+          offline_scarcity?: number | null
+          opportunity_score?: number | null
+          sell_price_estimate?: number | null
+          source_url?: string | null
+          sub_niche_id?: string | null
+          sub_niche_slug: string
+          thumbnail?: string | null
+          updated_at?: string
+          verdict?: string | null
+        }
+        Update: {
+          advertiser_count?: number | null
+          buy_price_estimate?: number | null
+          buying_intent?: number | null
+          competition_difficulty?: number | null
+          competitors?: Json | null
+          created_at?: string
+          data_source?: string | null
+          id?: string
+          last_signal_at?: string
+          margin_potential?: number | null
+          max_price?: number | null
+          median_price?: number | null
+          min_price?: number | null
+          name?: string
+          offline_scarcity?: number | null
+          opportunity_score?: number | null
+          sell_price_estimate?: number | null
+          source_url?: string | null
+          sub_niche_id?: string | null
+          sub_niche_slug?: string
+          thumbnail?: string | null
+          updated_at?: string
+          verdict?: string | null
+        }
+        Relationships: []
+      }
       serpapi_cache: {
         Row: {
           cache_key: string
