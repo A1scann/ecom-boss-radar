@@ -242,7 +242,7 @@ const SubNicheDetail = () => {
         actions={
           <div className="flex gap-2">
             <Button asChild>
-              <Link to={`/products?niche=${niche.id}`}>
+              <Link to={`/products?niche=${niche.id}&slug=${niche.slug ?? ""}&seed=${encodeURIComponent(niche.name)}`}>
                 <Package className="w-4 h-4 mr-2" /> Trouver des produits
               </Link>
             </Button>
