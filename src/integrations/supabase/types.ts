@@ -178,6 +178,48 @@ export type Database = {
           },
         ]
       }
+      opportunity_edges: {
+        Row: {
+          created_at: string
+          edge_type: string
+          id: string
+          source_id: string
+          target_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          edge_type?: string
+          id?: string
+          source_id: string
+          target_id: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          edge_type?: string
+          id?: string
+          source_id?: string
+          target_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_edges_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sub_niches_live"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_edges_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "sub_niches_live"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       serpapi_cache: {
         Row: {
           cache_key: string
@@ -223,11 +265,15 @@ export type Database = {
           data_source: string | null
           demand_acceleration: number | null
           demand_growth_90d: number | null
+          depth: number
+          description: string | null
+          discovery_mode: string
           emerging_clusters: Json | null
           estimated_cpa: number | null
           hidden_opportunity_score: number | null
           hidden_signal: string | null
           id: string
+          is_seed: boolean
           last_signal_at: string
           macro_id: string | null
           margin_potential: number | null
@@ -236,6 +282,7 @@ export type Database = {
           mode: string | null
           name: string
           opportunity_score: number | null
+          parent_id: string | null
           price_dispersion: number | null
           search_demand: number | null
           seasonality: number | null
@@ -259,11 +306,15 @@ export type Database = {
           data_source?: string | null
           demand_acceleration?: number | null
           demand_growth_90d?: number | null
+          depth?: number
+          description?: string | null
+          discovery_mode?: string
           emerging_clusters?: Json | null
           estimated_cpa?: number | null
           hidden_opportunity_score?: number | null
           hidden_signal?: string | null
           id?: string
+          is_seed?: boolean
           last_signal_at?: string
           macro_id?: string | null
           margin_potential?: number | null
@@ -272,6 +323,7 @@ export type Database = {
           mode?: string | null
           name: string
           opportunity_score?: number | null
+          parent_id?: string | null
           price_dispersion?: number | null
           search_demand?: number | null
           seasonality?: number | null
@@ -295,11 +347,15 @@ export type Database = {
           data_source?: string | null
           demand_acceleration?: number | null
           demand_growth_90d?: number | null
+          depth?: number
+          description?: string | null
+          discovery_mode?: string
           emerging_clusters?: Json | null
           estimated_cpa?: number | null
           hidden_opportunity_score?: number | null
           hidden_signal?: string | null
           id?: string
+          is_seed?: boolean
           last_signal_at?: string
           macro_id?: string | null
           margin_potential?: number | null
@@ -308,6 +364,7 @@ export type Database = {
           mode?: string | null
           name?: string
           opportunity_score?: number | null
+          parent_id?: string | null
           price_dispersion?: number | null
           search_demand?: number | null
           seasonality?: number | null
@@ -326,6 +383,13 @@ export type Database = {
             columns: ["macro_id"]
             isOneToOne: false
             referencedRelation: "macro_niches_live"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_niches_live_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "sub_niches_live"
             referencedColumns: ["id"]
           },
         ]

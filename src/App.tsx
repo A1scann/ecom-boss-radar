@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ShortlistProvider } from "@/store/shortlist";
 import Dashboard from "./pages/Dashboard";
+import OpportunityUniverse from "./pages/OpportunityUniverse";
 import NicheRadar from "./pages/NicheRadar";
 import SubNicheDetail from "./pages/SubNicheDetail";
 import ProductFinder from "./pages/ProductFinder";
@@ -27,7 +28,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<OpportunityUniverse />} />
+              <Route path="/insights" element={<Dashboard />} />
               <Route path="/niches" element={<NicheRadar />} />
               <Route path="/niches/:id" element={<SubNicheDetail />} />
               <Route path="/products" element={<ProductFinder />} />

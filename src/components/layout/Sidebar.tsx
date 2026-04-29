@@ -1,9 +1,10 @@
-import { LayoutDashboard, Radar, Package, Target, Sparkles, Eye, Bookmark, Zap } from "lucide-react";
+import { LayoutDashboard, Radar, Package, Target, Sparkles, Eye, Bookmark, Zap, Globe } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/", label: "Opportunity Universe", icon: Globe, badge: "∞" },
+  { to: "/insights", label: "Dashboard", icon: LayoutDashboard },
   { to: "/niches", label: "Niche Radar", icon: Radar },
   { to: "/live", label: "Live Intelligence", icon: Zap, badge: "LIVE" },
   { to: "/products", label: "Product Finder", icon: Package },
