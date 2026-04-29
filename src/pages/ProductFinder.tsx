@@ -71,7 +71,8 @@ const ProductFinder = () => {
       .select("*")
       .eq("sub_niche_slug", slug)
       .order("opportunity_score", { ascending: false });
-    if (error) console.error(error);
+    if (error) console.error("[ProductFinder] products_live error:", error);
+    console.log(`[ProductFinder] products_live rows for slug="${slug}":`, (data ?? []).length);
     setLive((data ?? []) as LiveProduct[]);
     setLoading(false);
     return data ?? [];
