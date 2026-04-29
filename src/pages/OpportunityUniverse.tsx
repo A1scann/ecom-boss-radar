@@ -49,11 +49,15 @@ export default function OpportunityUniverse() {
     try {
       const macroSlug = filters.macroId
         ? macros.find((m) => m.id === filters.macroId)?.slug
-        : macros[Math.floor(Math.random() * macros.length)]?.slug;
-      const parentId = mode !== "whitespace" && selectedId ? selectedId : undefined;
-      if (mode !== "whitespace" && !parentId) {
-        toast.error("Sélectionne une niche dans la table pour l'étendre");
-        return;
+        : macros[Math.floor(Math.random() * Math.max(macros.length, 1))]?.slug;
+      // For non-whitespace modes, use selection or fall back to a top opportunity in scope
+      let parentId: string | undefined;
+      if (mode !== "whitespace") {
+        parentId = selectedId ?? opportunities[0]?.id;
+        if (!parentId) {
+          toast.error("Aucune niche disponible — lance d'abord une découverte.");
+          return;
+        }
       }
       const res = await expandNiche({ mode, macroSlug, parentId, n: 20 });
       toast.success(`+${res.generated} opportunités générées (${mode})`);
@@ -62,6 +66,23 @@ export default function OpportunityUniverse() {
       toast.error(e instanceof Error ? e.message : "Échec de l'expansion");
     } finally {
       setExpanding(null);
+    }
+  };
+
+  const runDiscover = async () => {
+    const s = seed.trim();
+    if (s.length < 2) { toast.error("Saisis un mot-clé seed (≥ 2 caractères)"); return; }
+    setDiscovering(true);
+    try {
+      const macroSlug = filters.macroId ? macros.find((m) => m.id === filters.macroId)?.slug : undefined;
+      const res = await discoverNiche({ seed: s, macroSlug });
+      toast.success(`Niche découverte : ${res?.subNiche?.name ?? s}`);
+      setSeed("");
+      await Promise.all([refresh(), refreshEdges()]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec de la découverte");
+    } finally {
+      setDiscovering(false);
     }
   };
 
