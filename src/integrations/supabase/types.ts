@@ -220,6 +220,35 @@ export type Database = {
           },
         ]
       }
+      product_watchlist: {
+        Row: {
+          added_at: string
+          id: string
+          last_refreshed_at: string
+          product_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          last_refreshed_at?: string
+          product_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          last_refreshed_at?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_watchlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_live"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products_live: {
         Row: {
           advertiser_count: number | null
@@ -238,6 +267,7 @@ export type Database = {
           name: string
           offline_scarcity: number | null
           opportunity_score: number | null
+          score_history: Json
           sell_price_estimate: number | null
           source_url: string | null
           sub_niche_id: string | null
@@ -263,6 +293,7 @@ export type Database = {
           name: string
           offline_scarcity?: number | null
           opportunity_score?: number | null
+          score_history?: Json
           sell_price_estimate?: number | null
           source_url?: string | null
           sub_niche_id?: string | null
@@ -288,6 +319,7 @@ export type Database = {
           name?: string
           offline_scarcity?: number | null
           opportunity_score?: number | null
+          score_history?: Json
           sell_price_estimate?: number | null
           source_url?: string | null
           sub_niche_id?: string | null
