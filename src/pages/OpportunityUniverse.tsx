@@ -24,6 +24,8 @@ export default function OpportunityUniverse() {
   const { edges, refresh: refreshEdges } = useEdges();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanding, setExpanding] = useState<ExpandMode | null>(null);
+  const [seed, setSeed] = useState("");
+  const [discovering, setDiscovering] = useState(false);
 
   const tableRef = useRef<HTMLDivElement>(null);
   const virt = useVirtualizer({
