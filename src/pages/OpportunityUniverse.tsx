@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMacros, useOpportunities, useEdges, expandNiche, defaultFilters, type Filters, type Mode, type ExpandMode } from "@/hooks/useOpportunities";
+import { useMacros, useOpportunities, useEdges, expandNiche, discoverNiche, defaultFilters, type Filters, type Mode, type ExpandMode } from "@/hooks/useOpportunities";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,8 @@ export default function OpportunityUniverse() {
   const { edges, refresh: refreshEdges } = useEdges();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanding, setExpanding] = useState<ExpandMode | null>(null);
+  const [seed, setSeed] = useState("");
+  const [discovering, setDiscovering] = useState(false);
 
   const tableRef = useRef<HTMLDivElement>(null);
   const virt = useVirtualizer({
@@ -47,11 +49,15 @@ export default function OpportunityUniverse() {
     try {
       const macroSlug = filters.macroId
         ? macros.find((m) => m.id === filters.macroId)?.slug
-        : macros[Math.floor(Math.random() * macros.length)]?.slug;
-      const parentId = mode !== "whitespace" && selectedId ? selectedId : undefined;
-      if (mode !== "whitespace" && !parentId) {
-        toast.error("Sélectionne une niche dans la table pour l'étendre");
-        return;
+        : macros[Math.floor(Math.random() * Math.max(macros.length, 1))]?.slug;
+      // For non-whitespace modes, use selection or fall back to a top opportunity in scope
+      let parentId: string | undefined;
+      if (mode !== "whitespace") {
+        parentId = selectedId ?? opportunities[0]?.id;
+        if (!parentId) {
+          toast.error("Aucune niche disponible — lance d'abord une découverte.");
+          return;
+        }
       }
       const res = await expandNiche({ mode, macroSlug, parentId, n: 20 });
       toast.success(`+${res.generated} opportunités générées (${mode})`);
@@ -60,6 +66,23 @@ export default function OpportunityUniverse() {
       toast.error(e instanceof Error ? e.message : "Échec de l'expansion");
     } finally {
       setExpanding(null);
+    }
+  };
+
+  const runDiscover = async () => {
+    const s = seed.trim();
+    if (s.length < 2) { toast.error("Saisis un mot-clé seed (≥ 2 caractères)"); return; }
+    setDiscovering(true);
+    try {
+      const macroSlug = filters.macroId ? macros.find((m) => m.id === filters.macroId)?.slug : undefined;
+      const res = await discoverNiche({ seed: s, macroSlug });
+      toast.success(`Niche découverte : ${res?.subNiche?.name ?? s}`);
+      setSeed("");
+      await Promise.all([refresh(), refreshEdges()]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec de la découverte");
+    } finally {
+      setDiscovering(false);
     }
   };
 
@@ -88,6 +111,32 @@ export default function OpportunityUniverse() {
           </div>
         }
       />
+
+      {/* Seed discovery bar — calls niche-discover */}
+      <div className="rounded-xl border border-primary/30 bg-gradient-radial p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Découverte live</span>
+        </div>
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Découvrir une nouvelle niche… (ex : pergola bioclimatique, vélo cargo électrique)"
+            value={seed}
+            onChange={(e) => setSeed(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") runDiscover(); }}
+            className="pl-9 h-10 bg-background/60"
+            disabled={discovering}
+          />
+        </div>
+        <Button onClick={runDiscover} disabled={discovering || seed.trim().length < 2} className="shrink-0">
+          {discovering ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
+          Analyser & scorer
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Opportunités totales" value={stats.total.toLocaleString("fr-FR")} hint={`${opportunities.length} affichées`} accent />
