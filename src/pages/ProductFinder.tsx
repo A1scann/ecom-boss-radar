@@ -452,6 +452,22 @@ const ProductTable = ({
                   {p.supplierUrl && (
                     <Button size="icon" variant="ghost" asChild><a href={p.supplierUrl} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button>
                   )}
+                  <SubmitToCoach
+                    variant="icon"
+                    product={{
+                      name: p.name,
+                      niche: p.niche,
+                      supplierUrl: p.supplierUrl,
+                      buyPrice: p.buyPrice,
+                      sellPrice: p.sellPrice,
+                      margin: p.margin,
+                      semrushSearches: p.semrushSearches,
+                      googleTrends: p.googleTrends,
+                      seasonality: p.seasonality,
+                      marketingAngle: p.marketingAngle,
+                      competitors: p.competitors,
+                    }}
+                  />
                   {p.isLive && (
                     <Button size="icon" variant="ghost" onClick={() => onToggleWatch(p.id)}
                       className={cn(isWatched(p.id) && "text-primary")}
