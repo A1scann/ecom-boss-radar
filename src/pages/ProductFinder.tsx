@@ -12,6 +12,7 @@ import { Bookmark, BookmarkCheck, ExternalLink, Check, X, Loader2, Sparkles, Ref
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { SubmitToCoach } from "@/components/SubmitToCoach";
 
 type ScorePoint = { date: string; score: number };
 
@@ -60,6 +61,9 @@ type Row = {
   scoreHistory?: ScorePoint[];
   lastRefreshedAt?: string | null;
   subNicheSlug?: string;
+  competitors?: string[];
+  googleTrends?: number | string;
+  seasonality?: string;
 };
 
 function relativeTime(iso?: string | null) {
@@ -239,6 +243,8 @@ const ProductFinder = () => {
     isLive: true,
     scoreHistory: p.score_history ?? [],
     subNicheSlug: p.sub_niche_slug,
+    competitors: p.competitors ?? [],
+    seasonality: "Evergreen",
   });
 
   const discoverRows = useMemo<Row[]>(() => {
@@ -251,6 +257,9 @@ const ProductFinder = () => {
         semrushSearches: p.semrushSearches, cpc: p.cpc, amazonDominated: p.amazonDominated,
         fitScore: p.fitScore, marketingAngle: p.marketingAngle, supplierUrl: p.supplierUrl,
         isLive: false,
+        competitors: p.competitors,
+        googleTrends: p.googleTrends,
+        seasonality: p.seasonality,
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, slugFilter, nicheFilter]);
@@ -443,6 +452,22 @@ const ProductTable = ({
                   {p.supplierUrl && (
                     <Button size="icon" variant="ghost" asChild><a href={p.supplierUrl} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a></Button>
                   )}
+                  <SubmitToCoach
+                    variant="icon"
+                    product={{
+                      name: p.name,
+                      niche: p.niche,
+                      supplierUrl: p.supplierUrl,
+                      buyPrice: p.buyPrice,
+                      sellPrice: p.sellPrice,
+                      margin: p.margin,
+                      semrushSearches: p.semrushSearches,
+                      googleTrends: p.googleTrends,
+                      seasonality: p.seasonality,
+                      marketingAngle: p.marketingAngle,
+                      competitors: p.competitors,
+                    }}
+                  />
                   {p.isLive && (
                     <Button size="icon" variant="ghost" onClick={() => onToggleWatch(p.id)}
                       className={cn(isWatched(p.id) && "text-primary")}
