@@ -61,6 +61,9 @@ type Row = {
   scoreHistory?: ScorePoint[];
   lastRefreshedAt?: string | null;
   subNicheSlug?: string;
+  competitors?: string[];
+  googleTrends?: number | string;
+  seasonality?: string;
 };
 
 function relativeTime(iso?: string | null) {
