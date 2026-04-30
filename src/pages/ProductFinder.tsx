@@ -243,6 +243,8 @@ const ProductFinder = () => {
     isLive: true,
     scoreHistory: p.score_history ?? [],
     subNicheSlug: p.sub_niche_slug,
+    competitors: p.competitors ?? [],
+    seasonality: "Evergreen",
   });
 
   const discoverRows = useMemo<Row[]>(() => {
@@ -255,6 +257,9 @@ const ProductFinder = () => {
         semrushSearches: p.semrushSearches, cpc: p.cpc, amazonDominated: p.amazonDominated,
         fitScore: p.fitScore, marketingAngle: p.marketingAngle, supplierUrl: p.supplierUrl,
         isLive: false,
+        competitors: p.competitors,
+        googleTrends: p.googleTrends,
+        seasonality: p.seasonality,
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, slugFilter, nicheFilter]);
