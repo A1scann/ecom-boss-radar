@@ -9,7 +9,7 @@ import {
   Radar, Search, Loader2, Zap, Target, Eye, TrendingUp, TrendingDown,
   Activity, ArrowRight, Sparkles, Database, Radio, Clock,
 } from "lucide-react";
-import { ResponsiveContainer, LineChart, Line } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis } from "recharts";
 import { toast } from "sonner";
 
 const formatRelative = (iso: string) => {
