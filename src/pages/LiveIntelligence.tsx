@@ -72,16 +72,36 @@ const LiveIntelligence = () => {
     .filter((n) => n.watchlist || (n.demand_growth_90d ?? 0) > 20)
     .sort((a, b) => Number(b.demand_growth_90d) - Number(a.demand_growth_90d));
 
+  const lastSignalIso = live.data
+    .map((n) => n.last_signal_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1) ?? null;
+  const freshness = formatLastSignalLabel(lastSignalIso);
+
   return (
     <>
       <PageHeader
         eyebrow="Live Data Layer · SerpApi"
-        title="Live Intelligence"
+        title="Signaux live"
         description="Données SerpApi temps réel : Google Trends FR, autocomplete, related queries, SERP, Shopping. Discovery → Intent Mining → Ad Arbitrage."
         actions={
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Database className="w-3 h-3" />
-            <span>{live.data.length} sub-niches en base</span>
+          <div className="flex items-center gap-3 text-xs">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-1 rounded-md border font-medium",
+                freshness.tone === "ok"
+                  ? "bg-success/10 text-success border-success/30"
+                  : "bg-warning/10 text-warning border-warning/30"
+              )}
+            >
+              <Clock className="w-3 h-3" />
+              {freshness.text}
+            </span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Database className="w-3 h-3" />
+              <span>{live.data.length} sub-niches en base</span>
+            </div>
           </div>
         }
       />
