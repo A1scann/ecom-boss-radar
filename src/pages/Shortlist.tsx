@@ -2,7 +2,7 @@ import { PageHeader, ScorePill } from "@/components/ui-custom/Premium";
 import { products } from "@/data/mockData";
 import { useShortlist } from "@/store/shortlist";
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Bookmark } from "lucide-react";
+import { Download, Trash2, Bookmark, Compass, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ const Shortlist = () => {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `ecomboss-shortlist-${Date.now()}.csv`; a.click();
+    a.href = url; a.download = `niche-shortlist-${Date.now()}.csv`; a.click();
     URL.revokeObjectURL(url);
     toast.success("Shortlist exportée en CSV");
   };
@@ -48,11 +48,15 @@ const Shortlist = () => {
 
       {items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-12 text-center bg-gradient-card">
-          <Bookmark className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <h3 className="font-semibold mb-1">Aucun produit dans votre shortlist</h3>
-          <p className="text-sm text-muted-foreground mb-4">Ajoutez des produits depuis le Product Finder.</p>
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+            <Compass className="w-7 h-7 text-primary" />
+          </div>
+          <h3 className="font-semibold text-lg mb-1">Aucun produit dans votre sélection pour l'instant.</h3>
+          <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+            Explorez le Niche Radar et ajoutez les produits qui vous intéressent.
+          </p>
           <Button asChild className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-            <Link to="/products">Découvrir les produits</Link>
+            <Link to="/niches">→ Explorer les niches <ArrowRight className="w-4 h-4 ml-1" /></Link>
           </Button>
         </div>
       ) : (
