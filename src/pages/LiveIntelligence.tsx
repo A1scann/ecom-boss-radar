@@ -19,6 +19,27 @@ const formatRelative = (iso: string) => {
   return `il y a ${days}j`;
 };
 
+const FR_MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+const monthLabelsBackwards = (count: number): string[] => {
+  const now = new Date();
+  const out: string[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push(`${FR_MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`);
+  }
+  return out;
+};
+
+const formatLastSignalLabel = (iso: string | null): { text: string; tone: "ok" | "warn" } => {
+  if (!iso) return { text: "Aucun signal", tone: "warn" };
+  const ms = Date.now() - new Date(iso).getTime();
+  const hours = ms / 3_600_000;
+  if (hours < 1) return { text: "Mis à jour il y a moins d'1h", tone: "ok" };
+  if (hours < 24) return { text: `Mis à jour il y a ${Math.floor(hours)}h`, tone: "ok" };
+  const days = Math.floor(hours / 24);
+  return { text: `Données en cache — il y a ${days} jour${days > 1 ? "s" : ""}`, tone: "warn" };
+};
+
 const LiveIntelligence = () => {
   const [seed, setSeed] = useState("");
   const [tab, setTab] = useState<"discover" | "intent" | "arbitrage">("discover");
