@@ -9,7 +9,7 @@ import {
   Radar, Search, Loader2, Zap, Target, Eye, TrendingUp, TrendingDown,
   Activity, ArrowRight, Sparkles, Database, Radio, Clock,
 } from "lucide-react";
-import { ResponsiveContainer, LineChart, Line } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis } from "recharts";
 import { toast } from "sonner";
 
 const formatRelative = (iso: string) => {
@@ -17,6 +17,27 @@ const formatRelative = (iso: string) => {
   if (days === 0) return "aujourd'hui";
   if (days === 1) return "hier";
   return `il y a ${days}j`;
+};
+
+const FR_MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+const monthLabelsBackwards = (count: number): string[] => {
+  const now = new Date();
+  const out: string[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push(`${FR_MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`);
+  }
+  return out;
+};
+
+const formatLastSignalLabel = (iso: string | null): { text: string; tone: "ok" | "warn" } => {
+  if (!iso) return { text: "Aucun signal", tone: "warn" };
+  const ms = Date.now() - new Date(iso).getTime();
+  const hours = ms / 3_600_000;
+  if (hours < 1) return { text: "Mis à jour il y a moins d'1h", tone: "ok" };
+  if (hours < 24) return { text: `Mis à jour il y a ${Math.floor(hours)}h`, tone: "ok" };
+  const days = Math.floor(hours / 24);
+  return { text: `Données en cache — il y a ${days} jour${days > 1 ? "s" : ""}`, tone: "warn" };
 };
 
 const LiveIntelligence = () => {
@@ -51,16 +72,36 @@ const LiveIntelligence = () => {
     .filter((n) => n.watchlist || (n.demand_growth_90d ?? 0) > 20)
     .sort((a, b) => Number(b.demand_growth_90d) - Number(a.demand_growth_90d));
 
+  const lastSignalIso = live.data
+    .map((n) => n.last_signal_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1) ?? null;
+  const freshness = formatLastSignalLabel(lastSignalIso);
+
   return (
     <>
       <PageHeader
         eyebrow="Live Data Layer · SerpApi"
-        title="Live Intelligence"
+        title="Signaux live"
         description="Données SerpApi temps réel : Google Trends FR, autocomplete, related queries, SERP, Shopping. Discovery → Intent Mining → Ad Arbitrage."
         actions={
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Database className="w-3 h-3" />
-            <span>{live.data.length} sub-niches en base</span>
+          <div className="flex items-center gap-3 text-xs">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-1 rounded-md border font-medium",
+                freshness.tone === "ok"
+                  ? "bg-success/10 text-success border-success/30"
+                  : "bg-warning/10 text-warning border-warning/30"
+              )}
+            >
+              <Clock className="w-3 h-3" />
+              {freshness.text}
+            </span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Database className="w-3 h-3" />
+              <span>{live.data.length} sub-niches en base</span>
+            </div>
           </div>
         }
       />
@@ -158,7 +199,7 @@ const DiscoverPanel = ({ data }: { data: NonNullable<ReturnType<typeof useNicheD
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Opportunity Score" value={scoring.opportunityScore} hint={`Maturity: ${meta.maturity}`} accent />
-        <StatCard label="EcomBoss Alpha" value={scoring.alphaScore} hint={meta.mode === "hidden" ? "🔍 Hidden" : "✓ Validated"} />
+        <StatCard label="Alpha Score" value={scoring.alphaScore} hint={meta.mode === "hidden" ? "🔍 Hidden" : "✓ Validated"} />
         <StatCard label="Hidden Score" value={scoring.hiddenOpportunityScore} hint={`SERP weakness ${scoring.serpWeaknessScore}`} />
         <StatCard label="Supplier Feasibility" value={scoring.supplierFeasibilityScore} hint={`Margin ${signals.marginPotential}€`} />
       </div>
@@ -178,10 +219,20 @@ const DiscoverPanel = ({ data }: { data: NonNullable<ReturnType<typeof useNicheD
           </div>
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={signals.trendSeries.map((v, i) => ({ i, v }))}>
-                <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              </LineChart>
+              {(() => {
+                const labels = monthLabelsBackwards(signals.trendSeries.length);
+                const chartData = signals.trendSeries.map((v, i) => ({ m: labels[i], v }));
+                return (
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(chartData.length / 6) - 1)} />
+                    <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                );
+              })()}
             </ResponsiveContainer>
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-2 text-center">
+            Source : Google Trends FR · 12 derniers mois
           </div>
         </div>
 

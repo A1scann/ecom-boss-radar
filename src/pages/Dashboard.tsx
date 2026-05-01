@@ -11,7 +11,13 @@ const Dashboard = () => {
   const totalMargin = products.reduce((a, p) => a + p.margin, 0);
 
   const topNiches = [...subNiches].sort((a, b) => b.opportunityScore - a.opportunityScore).slice(0, 6);
-  const trendData = subNiches[0].trend.map((v, i) => ({ m: i + 1, v }));
+  const FR_MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+  const monthLabel = (i: number, total: number) => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - (total - 1 - i), 1);
+    return `${FR_MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+  };
+  const trendData = subNiches[0].trend.map((v, i, arr) => ({ m: monthLabel(i, arr.length), v }));
   const scoreData = topNiches.map((n) => ({ name: n.name.split(" ").slice(0, 2).join(" "), score: n.opportunityScore }));
 
   return (
@@ -30,7 +36,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard accent label="Sous-niches détectées" value={subNiches.length} hint={`${subNiches.filter((n) => n.mode === "hidden").length} hidden opportunities`} />
         <StatCard label="Produits scorés" value={products.length} hint={`${prioritaires.length} prioritaires`} />
-        <StatCard label="EcomBoss Fit moyen" value={`${avgFit}/100`} hint="Pipeline qualifié" />
+        <StatCard label="Fit Score moyen" value={`${avgFit}/100`} hint="Pipeline qualifié" />
         <StatCard label="Marge cumulée potentielle" value={`${(totalMargin / 1000).toFixed(1)}k€`} hint="Sur shortlist actuelle" />
       </div>
 
@@ -51,11 +57,14 @@ const Dashboard = () => {
                   <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+              <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" fontSize={11} interval={1} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
               <Area type="monotone" dataKey="v" stroke="hsl(var(--primary))" fill="url(#g1)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
+          <div className="text-[11px] text-muted-foreground mt-2 text-center">
+            Source : Google Trends FR · 12 derniers mois
+          </div>
         </div>
 
         <div className="rounded-xl border border-border bg-gradient-card p-6 shadow-card-premium">

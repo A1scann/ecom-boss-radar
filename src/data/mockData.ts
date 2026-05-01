@@ -1,5 +1,5 @@
 // Mock data — high-ticket FR Google Ads opportunities
-// Aligned with EcomBoss methodology: high intent, evergreen, offline-scarce, marge >200€
+// Aligned with Niché methodology: high intent, evergreen, offline-scarce, marge >200€
 
 export type MaturityStage = "Emerging" | "Growth" | "Mature" | "Saturated";
 
@@ -120,7 +120,7 @@ const makeProduct = (
   seasonality: Product["seasonality"] = "Evergreen"
 ): Product => {
   const margin = sell - buy;
-  // Scoring engine — EcomBoss weights
+  // Scoring engine — Niché weights
   const sd = Math.min(20, (searches / 30000) * 20);
   const bi = (intent / 100) * 20;
   const mg = Math.min(20, (margin / 1500) * 20);
