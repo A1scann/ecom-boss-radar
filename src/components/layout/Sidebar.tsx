@@ -3,17 +3,18 @@ import { LayoutDashboard, Radar, Package, Target, Sparkles, Eye, Bookmark, Zap, 
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import logoNiche from "@/assets/logo-niche.png";
 
 const items = [
-  { to: "/", label: "🔍 Découvrir des niches", icon: Globe },
-  { to: "/insights", label: "📊 Tableau de bord", icon: LayoutDashboard },
-  { to: "/niches", label: "📡 Radar de niches", icon: Radar },
-  { to: "/live", label: "⚡ Signaux live", icon: Zap, dynamic: true as const },
-  { to: "/products", label: "🎯 Trouver des produits", icon: Package },
-  { to: "/scoring", label: "⚖️ Scoring produit", icon: Target },
-  { to: "/angles", label: "💡 Angles marketing", icon: Sparkles },
-  { to: "/spy", label: "🕵️ Analyse concurrents", icon: Eye },
-  { to: "/shortlist", label: "⭐ Ma sélection", icon: Bookmark },
+  { to: "/", label: "Découvrir des niches", icon: Globe },
+  { to: "/insights", label: "Tableau de bord", icon: LayoutDashboard },
+  { to: "/niches", label: "Radar de niches", icon: Radar },
+  { to: "/live", label: "Signaux live", icon: Zap, dynamic: true as const },
+  { to: "/products", label: "Trouver des produits", icon: Package },
+  { to: "/scoring", label: "Scoring produit", icon: Target },
+  { to: "/angles", label: "Angles marketing", icon: Sparkles },
+  { to: "/spy", label: "Analyse concurrents", icon: Eye },
+  { to: "/shortlist", label: "Ma sélection", icon: Bookmark },
 ];
 
 const formatLastSignal = (iso: string | null): { text: string; tone: "ok" | "warn" } => {
@@ -48,10 +49,13 @@ export const Sidebar = () => {
   return (
     <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
       <div className="px-6 py-5 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
-            <span className="font-bold text-primary-foreground text-sm">N</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <img
+            src={logoNiche}
+            alt="Niché"
+            className="h-10 w-auto object-contain"
+            style={{ background: "transparent" }}
+          />
           <div>
             <div className="text-sm font-bold tracking-tight">Niché</div>
             <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Market Intelligence</div>

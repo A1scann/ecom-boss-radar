@@ -235,7 +235,7 @@ export default function OpportunityUniverse() {
                       <div className="text-[10px] text-muted-foreground flex gap-2 mt-0.5">
                         <span>{macroName(o.macro_id)}</span>
                         <span>· {o.maturity}</span>
-                        {o.watchlist && <span className="text-success">· 🔥 watch</span>}
+                        {o.watchlist && <span className="text-success">· watch</span>}
                         {o.discovery_mode === "hidden" && <span className="text-warning">· hidden</span>}
                         {o.discovery_mode === "whitespace" && <span className="text-primary">· white</span>}
                       </div>
