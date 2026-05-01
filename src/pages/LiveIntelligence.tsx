@@ -199,7 +199,7 @@ const DiscoverPanel = ({ data }: { data: NonNullable<ReturnType<typeof useNicheD
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Opportunity Score" value={scoring.opportunityScore} hint={`Maturity: ${meta.maturity}`} accent />
-        <StatCard label="EcomBoss Alpha" value={scoring.alphaScore} hint={meta.mode === "hidden" ? "🔍 Hidden" : "✓ Validated"} />
+        <StatCard label="Alpha Score" value={scoring.alphaScore} hint={meta.mode === "hidden" ? "🔍 Hidden" : "✓ Validated"} />
         <StatCard label="Hidden Score" value={scoring.hiddenOpportunityScore} hint={`SERP weakness ${scoring.serpWeaknessScore}`} />
         <StatCard label="Supplier Feasibility" value={scoring.supplierFeasibilityScore} hint={`Margin ${signals.marginPotential}€`} />
       </div>
@@ -219,10 +219,20 @@ const DiscoverPanel = ({ data }: { data: NonNullable<ReturnType<typeof useNicheD
           </div>
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={signals.trendSeries.map((v, i) => ({ i, v }))}>
-                <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              </LineChart>
+              {(() => {
+                const labels = monthLabelsBackwards(signals.trendSeries.length);
+                const chartData = signals.trendSeries.map((v, i) => ({ m: labels[i], v }));
+                return (
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(chartData.length / 6) - 1)} />
+                    <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                );
+              })()}
             </ResponsiveContainer>
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-2 text-center">
+            Source : Google Trends FR · 12 derniers mois
           </div>
         </div>
 
