@@ -57,11 +57,14 @@ const Dashboard = () => {
                   <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+              <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" fontSize={11} interval={1} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
               <Area type="monotone" dataKey="v" stroke="hsl(var(--primary))" fill="url(#g1)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
+          <div className="text-[11px] text-muted-foreground mt-2 text-center">
+            Source : Google Trends FR · 12 derniers mois
+          </div>
         </div>
 
         <div className="rounded-xl border border-border bg-gradient-card p-6 shadow-card-premium">
