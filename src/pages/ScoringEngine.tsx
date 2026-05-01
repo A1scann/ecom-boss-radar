@@ -11,7 +11,7 @@ const weights = [
   { key: "competitionWeakness", label: "Competition Weakness", max: 15 },
   { key: "offlineScarcity", label: "Offline Scarcity", max: 10 },
   { key: "offerAngle", label: "Offer Angle", max: 10 },
-  { key: "ecombossFit", label: "EcomBoss Fit", max: 5 },
+  { key: "ecombossFit", label: "Niché Fit", max: 5 },
 ] as const;
 
 const ScoringEngine = () => {
@@ -33,13 +33,13 @@ const ScoringEngine = () => {
     <>
       <PageHeader
         eyebrow="Module 3"
-        title="Opportunity Scoring Engine"
-        description="EcomBoss Fit Score sur 100, calculé sur 7 dimensions propriétaires. Verdict instantané."
+        title="Scoring produit"
+        description="Niché Fit Score sur 100, calculé sur 7 dimensions propriétaires. Verdict instantané."
       />
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         <div className="rounded-xl border border-border bg-gradient-card p-6 shadow-card-premium">
-          <h3 className="font-semibold mb-4">Pondérations EcomBoss</h3>
+          <h3 className="font-semibold mb-4">Pondérations Niché</h3>
           <div className="space-y-3">
             {weights.map((w) => (
               <div key={w.key}>

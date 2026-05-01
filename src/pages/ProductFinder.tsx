@@ -277,11 +277,11 @@ const ProductFinder = () => {
     <>
       <PageHeader
         eyebrow="Module 2"
-        title="Product Finder"
+        title="Trouver des produits"
         description={
           slugFilter
             ? `Produits high-ticket détectés dans la sous-niche « ${seed || slugFilter} ».`
-            : "Tous les produits high-ticket scorés selon la méthode EcomBoss."
+            : "Tous les produits high-ticket scorés selon la méthode Niché."
         }
         actions={
           <div className="flex gap-2">
