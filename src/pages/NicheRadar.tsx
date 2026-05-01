@@ -283,7 +283,7 @@ const NicheRadar = () => {
                 mode === m ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {m === "all" ? "Toutes" : m === "validated" ? "✓ Validated" : "🔍 Hidden"}
+              {m === "all" ? "Toutes" : m === "validated" ? "Validated" : "Hidden"}
             </button>
           ))}
         </div>
@@ -377,7 +377,7 @@ const SubNicheCard = ({ n }: { n: CardNiche }) => {
       )}
 
       {n.hiddenSignal && (
-        <div className="text-[11px] text-primary/90 italic mb-3 line-clamp-2">💡 {n.hiddenSignal}</div>
+        <div className="text-[11px] text-primary/90 italic mb-3 line-clamp-2">{n.hiddenSignal}</div>
       )}
 
       <div className="grid grid-cols-3 gap-2 text-[11px] text-muted-foreground mb-3">

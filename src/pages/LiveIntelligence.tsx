@@ -199,7 +199,7 @@ const DiscoverPanel = ({ data }: { data: NonNullable<ReturnType<typeof useNicheD
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Opportunity Score" value={scoring.opportunityScore} hint={`Maturity: ${meta.maturity}`} accent />
-        <StatCard label="Alpha Score" value={scoring.alphaScore} hint={meta.mode === "hidden" ? "🔍 Hidden" : "✓ Validated"} />
+        <StatCard label="Alpha Score" value={scoring.alphaScore} hint={meta.mode === "hidden" ? "Hidden" : "Validated"} />
         <StatCard label="Hidden Score" value={scoring.hiddenOpportunityScore} hint={`SERP weakness ${scoring.serpWeaknessScore}`} />
         <StatCard label="Supplier Feasibility" value={scoring.supplierFeasibilityScore} hint={`Margin ${signals.marginPotential}€`} />
       </div>

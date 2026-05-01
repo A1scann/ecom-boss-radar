@@ -56,10 +56,10 @@ export function SubmitToCoach({ product, variant = "default", size = "sm" }: Pro
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload),
       });
-      toast.success("✅ Produit envoyé au coach avec succès");
+      toast.success("Produit envoyé au coach avec succès");
       setOpen(false);
     } catch {
-      toast.error("❌ Erreur lors de l'envoi — réessaie");
+      toast.error("Erreur lors de l'envoi — réessaie");
     } finally {
       setSending(false);
     }

@@ -56,7 +56,7 @@ const Shortlist = () => {
             Explorez le Niche Radar et ajoutez les produits qui vous intéressent.
           </p>
           <Button asChild className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-            <Link to="/niches">→ Explorer les niches <ArrowRight className="w-4 h-4 ml-1" /></Link>
+            <Link to="/niches">Explorer les niches <ArrowRight className="w-4 h-4 ml-1" /></Link>
           </Button>
         </div>
       ) : (
