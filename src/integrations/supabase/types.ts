@@ -382,6 +382,7 @@ export type Database = {
           median_price: number | null
           min_price: number | null
           name: string
+          niche_slug: string | null
           offline_scarcity: number | null
           opportunity_score: number | null
           score_history: Json
@@ -409,6 +410,7 @@ export type Database = {
           median_price?: number | null
           min_price?: number | null
           name: string
+          niche_slug?: string | null
           offline_scarcity?: number | null
           opportunity_score?: number | null
           score_history?: Json
@@ -436,6 +438,7 @@ export type Database = {
           median_price?: number | null
           min_price?: number | null
           name?: string
+          niche_slug?: string | null
           offline_scarcity?: number | null
           opportunity_score?: number | null
           score_history?: Json
