@@ -55,7 +55,7 @@ function extractJson(text: string): any {
   return JSON.parse(m[0]);
 }
 
-async function callAI(apiKey: string, prompt: string, temperature: number) {
+async function callAI(apiKey: string, prompt: string, _temperature?: number) {
   const res = await fetch(AI_URL, {
     method: "POST",
     headers: {
@@ -65,7 +65,7 @@ async function callAI(apiKey: string, prompt: string, temperature: number) {
     body: JSON.stringify({
       model: AI_MODEL,
       max_completion_tokens: 16000,
-      temperature,
+      
       reasoning_effort: "minimal",
       response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
