@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import type { Opportunity, Edge } from "@/hooks/useOpportunities";
 import { cn } from "@/lib/utils";
+import { isValidNiche, MIN_OPPORTUNITY_SCORE } from "@/lib/nicheFilter";
 
 type Props = {
   nodes: Opportunity[];
