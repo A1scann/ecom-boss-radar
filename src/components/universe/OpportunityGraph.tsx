@@ -16,7 +16,10 @@ export function OpportunityGraph({ nodes, edges, selectedId, onSelect }: Props) 
 
   const positions = useMemo(() => {
     const W = 600, H = 600, cx = W / 2, cy = H / 2;
-    const sorted = [...nodes].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 80);
+    const filtered = nodes.filter((n) => n.opportunity_score >= MIN_OPPORTUNITY_SCORE && isValidNiche(n.name));
+    const excluded = nodes.length - filtered.length;
+    if (excluded > 0) console.log(`[NicheFilter] ${excluded} graph nodes excluded as products`);
+    const sorted = [...filtered].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 80);
     const rings = [
       { min: 80, r: 90 },   // top
       { min: 65, r: 175 },
