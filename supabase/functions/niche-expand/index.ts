@@ -256,7 +256,7 @@ Deno.serve(async (req) => {
       await admin.from("opportunity_edges").insert(edges);
     }
 
-    return json({ ok: true, mode, generated: inserted?.length ?? 0, niches: inserted });
+    return json({ ok: true, mode, generated: inserted?.length ?? 0, skipped, niches: inserted });
   } catch (e) {
     console.error("niche-expand", e);
     return json({ error: e instanceof Error ? e.message : String(e) }, 500);
