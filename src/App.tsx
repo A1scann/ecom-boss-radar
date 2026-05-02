@@ -11,6 +11,7 @@ import MacroDetail from "./pages/MacroDetail";
 import NicheDetail from "./pages/NicheDetail";
 import SubNicheTaxonomy from "./pages/SubNicheTaxonomy";
 import SubNicheDetail from "./pages/SubNicheDetail";
+import NicheResults from "./pages/NicheResults";
 import ProductFinder from "./pages/ProductFinder";
 import ScoringEngine from "./pages/ScoringEngine";
 import OfferAngles from "./pages/OfferAngles";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/macro/:slug" element={<MacroDetail />} />
               <Route path="/niche/:slug" element={<NicheDetail />} />
               <Route path="/sub-niche/:slug" element={<SubNicheTaxonomy />} />
+              <Route path="/results/:nicheSlug" element={<NicheResults />} />
               <Route path="/insights" element={<Dashboard />} />
               <Route path="/niches" element={<Navigate to="/" replace />} />
               <Route path="/niches/:id" element={<SubNicheDetail />} />
