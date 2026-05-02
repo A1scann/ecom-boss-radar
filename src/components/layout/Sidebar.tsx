@@ -7,8 +7,8 @@ import logoNiche from "@/assets/logo-niche.png";
 
 const items = [
   { to: "/", label: "Découvrir des niches", icon: Globe },
+  { to: "/", label: "Radar de niches", icon: Radar },
   { to: "/insights", label: "Tableau de bord", icon: LayoutDashboard },
-  { to: "/niches", label: "Radar de niches", icon: Radar },
   { to: "/live", label: "Signaux live", icon: Zap, dynamic: true as const },
   { to: "/products", label: "Trouver des produits", icon: Package },
   { to: "/scoring", label: "Scoring produit", icon: Target },

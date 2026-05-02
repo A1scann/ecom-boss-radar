@@ -7,7 +7,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ShortlistProvider } from "@/store/shortlist";
 import Dashboard from "./pages/Dashboard";
 import OpportunityUniverse from "./pages/OpportunityUniverse";
-import NicheRadar from "./pages/NicheRadar";
+import MacroDetail from "./pages/MacroDetail";
+import NicheDetail from "./pages/NicheDetail";
+import SubNicheTaxonomy from "./pages/SubNicheTaxonomy";
 import SubNicheDetail from "./pages/SubNicheDetail";
 import ProductFinder from "./pages/ProductFinder";
 import ScoringEngine from "./pages/ScoringEngine";
@@ -29,8 +31,11 @@ const App = () => (
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<OpportunityUniverse />} />
+              <Route path="/macro/:slug" element={<MacroDetail />} />
+              <Route path="/niche/:slug" element={<NicheDetail />} />
+              <Route path="/sub-niche/:slug" element={<SubNicheTaxonomy />} />
               <Route path="/insights" element={<Dashboard />} />
-              <Route path="/niches" element={<NicheRadar />} />
+              <Route path="/niches" element={<Navigate to="/" replace />} />
               <Route path="/niches/:id" element={<SubNicheDetail />} />
               <Route path="/products" element={<ProductFinder />} />
               <Route path="/scoring" element={<ScoringEngine />} />
