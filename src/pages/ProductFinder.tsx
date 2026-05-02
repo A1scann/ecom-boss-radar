@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { SubmitToCoach } from "@/components/SubmitToCoach";
+import { MIN_OPPORTUNITY_SCORE, MIN_PRODUCT_MARGIN } from "@/lib/nicheFilter";
 
 type ScorePoint = { date: string; score: number };
 
