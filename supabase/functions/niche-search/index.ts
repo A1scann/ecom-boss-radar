@@ -64,8 +64,10 @@ async function callAI(apiKey: string, prompt: string, temperature: number) {
     },
     body: JSON.stringify({
       model: AI_MODEL,
-      max_completion_tokens: 8000,
+      max_completion_tokens: 16000,
       temperature,
+      reasoning_effort: "minimal",
+      response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -76,6 +78,7 @@ async function callAI(apiKey: string, prompt: string, temperature: number) {
     throw new Error(`Lovable AI ${res.status}: ${JSON.stringify(data).slice(0, 400)}`);
   }
   const text = data?.choices?.[0]?.message?.content;
+  console.log("[callAI] raw output:", text?.substring(0, 300));
   if (typeof text !== "string") throw new Error("Lovable AI returned no text content");
   return text;
 }
