@@ -92,6 +92,33 @@ export type Database = {
         }
         Relationships: []
       }
+      macro_niches: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       macro_niches_live: {
         Row: {
           avg_opportunity: number | null
@@ -130,6 +157,61 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      micro_niches: {
+        Row: {
+          created_at: string | null
+          id: string
+          macro_id: string | null
+          name: string
+          niche_id: string | null
+          seed_keyword: string | null
+          slug: string
+          sub_niche_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          macro_id?: string | null
+          name: string
+          niche_id?: string | null
+          seed_keyword?: string | null
+          slug: string
+          sub_niche_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          macro_id?: string | null
+          name?: string
+          niche_id?: string | null
+          seed_keyword?: string | null
+          slug?: string
+          sub_niche_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "micro_niches_macro_id_fkey"
+            columns: ["macro_id"]
+            isOneToOne: false
+            referencedRelation: "macro_niches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "micro_niches_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "micro_niches_sub_niche_id_fkey"
+            columns: ["sub_niche_id"]
+            isOneToOne: false
+            referencedRelation: "sub_niches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       niche_keywords: {
         Row: {
@@ -174,6 +256,41 @@ export type Database = {
             columns: ["sub_niche_id"]
             isOneToOne: false
             referencedRelation: "sub_niches_live"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      niches: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          macro_id: string | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          macro_id?: string | null
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          macro_id?: string | null
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "niches_macro_id_fkey"
+            columns: ["macro_id"]
+            isOneToOne: false
+            referencedRelation: "macro_niches"
             referencedColumns: ["id"]
           },
         ]
@@ -362,6 +479,51 @@ export type Database = {
           response?: Json
         }
         Relationships: []
+      }
+      sub_niches: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          macro_id: string | null
+          name: string
+          niche_id: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          macro_id?: string | null
+          name: string
+          niche_id?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          macro_id?: string | null
+          name?: string
+          niche_id?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_niches_macro_id_fkey"
+            columns: ["macro_id"]
+            isOneToOne: false
+            referencedRelation: "macro_niches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_niches_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sub_niches_live: {
         Row: {
