@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResponsiveContainer, LineChart, Line } from "recharts";
 import { useMacros, useOpportunities, defaultFilters, type Opportunity, type Macro } from "@/hooks/useOpportunities";
+import { isValidNiche, MIN_OPPORTUNITY_SCORE } from "@/lib/nicheFilter";
 import {
   Sparkles, ArrowRight, TrendingUp, TrendingDown, Activity,
   Flame, Eye, Layers, Radio, Clock,
@@ -121,8 +122,14 @@ const NicheRadar = () => {
   }, [macros]);
 
   const niches: CardNiche[] = useMemo(() => {
-    if (usingLive) return liveOpps.map((o) => fromLive(o, macroNameById.get(o.macro_id ?? "") ?? "—"));
-    return mockSubs.map(fromMock);
+    const raw = usingLive
+      ? liveOpps.map((o) => fromLive(o, macroNameById.get(o.macro_id ?? "") ?? "—"))
+      : mockSubs.map(fromMock);
+    const before = raw.length;
+    const cleaned = raw.filter((n) => n.opportunityScore >= MIN_OPPORTUNITY_SCORE && isValidNiche(n.name));
+    const excluded = before - cleaned.length;
+    if (excluded > 0) console.log(`[NicheFilter] ${excluded} entries excluded as products`);
+    return cleaned;
   }, [usingLive, liveOpps, macroNameById]);
 
   const watchlist = useMemo(

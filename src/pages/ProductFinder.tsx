@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { SubmitToCoach } from "@/components/SubmitToCoach";
+import { MIN_OPPORTUNITY_SCORE, MIN_PRODUCT_MARGIN } from "@/lib/nicheFilter";
 
 type ScorePoint = { date: string; score: number };
 
@@ -118,7 +119,7 @@ const ProductFinder = () => {
   const seed = params.get("seed") ?? "";
   const { has, toggle } = useShortlist();
 
-  const [minMargin, setMinMargin] = useState(200);
+  const [minMargin, setMinMargin] = useState(MIN_PRODUCT_MARGIN);
   const [minSearches, setMinSearches] = useState(0);
   const [evergreenOnly, setEvergreenOnly] = useState(false);
   const [excludeAmazon, setExcludeAmazon] = useState(false);
@@ -139,6 +140,8 @@ const ProductFinder = () => {
       .from("products_live")
       .select("*")
       .eq("sub_niche_slug", slug)
+      .gte("opportunity_score", MIN_OPPORTUNITY_SCORE)
+      .neq("verdict", "Rejeter")
       .order("opportunity_score", { ascending: false });
     if (error) console.error("[ProductFinder] products_live error:", error);
     setLive((data ?? []) as any);
@@ -158,7 +161,9 @@ const ProductFinder = () => {
     const ids = entries.map((w) => w.product_id);
     if (ids.length === 0) { setWatchlistProducts([]); return; }
     const { data: prods, error: e2 } = await supabase
-      .from("products_live").select("*").in("id", ids);
+      .from("products_live").select("*")
+      .in("id", ids)
+      .neq("verdict", "Rejeter");
     if (e2) { console.error("[Watchlist] products fetch error", e2); return; }
     setWatchlistProducts((prods ?? []) as any);
   }, []);
@@ -265,6 +270,8 @@ const ProductFinder = () => {
   }, [live, slugFilter, nicheFilter]);
 
   const filtered = useMemo(() => discoverRows.filter((p) => {
+    if (p.verdict === "Rejeter") return false;
+    if (p.fitScore < MIN_OPPORTUNITY_SCORE) return false;
     if (p.margin < minMargin) return false;
     if (p.semrushSearches < minSearches) return false;
     if (excludeAmazon && p.amazonDominated) return false;
@@ -297,6 +304,9 @@ const ProductFinder = () => {
           </div>
         }
       />
+      <div className="mb-4 -mt-2 text-xs text-muted-foreground">
+        Affichage des produits scorés ≥ {MIN_OPPORTUNITY_SCORE} · Marge ≥ {MIN_PRODUCT_MARGIN}€
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mb-4">
         <TabsList>
