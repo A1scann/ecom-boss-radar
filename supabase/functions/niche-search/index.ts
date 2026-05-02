@@ -64,7 +64,7 @@ async function callAI(apiKey: string, prompt: string, temperature: number) {
     },
     body: JSON.stringify({
       model: AI_MODEL,
-      max_tokens: 8000,
+      max_completion_tokens: 8000,
       temperature,
       messages: [{ role: "user", content: prompt }],
     }),
