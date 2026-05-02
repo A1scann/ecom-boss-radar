@@ -245,11 +245,11 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: "BAD_REQUEST", message: parsed.error.message }, 400);
     const { nicheSlug } = parsed.data;
 
-    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_KEY) {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
       return json({
-        error: "MISSING_ANTHROPIC_KEY",
-        message: "ANTHROPIC_API_KEY is not set in Supabase Edge Function secrets",
+        error: "MISSING_LOVABLE_AI_KEY",
+        message: "LOVABLE_API_KEY is not configured — enable Lovable Cloud for this project.",
       }, 500);
     }
 
@@ -267,7 +267,7 @@ Deno.serve(async (req) => {
     // PASS 1 — broad generation
     let broadIdeas: Idea[];
     try {
-      const text1 = await callAnthropic(ANTHROPIC_KEY, pass1Prompt(nicheName, subNiches), 1.0);
+      const text1 = await callAI(LOVABLE_API_KEY, pass1Prompt(nicheName, subNiches), 1.0);
       const parsed1 = extractJson(text1);
       broadIdeas = parsed1.products;
       if (!Array.isArray(broadIdeas) || broadIdeas.length < 20) {
@@ -281,7 +281,7 @@ Deno.serve(async (req) => {
     // PASS 2 — critical filtering
     let productIdeas: Idea[];
     try {
-      const text2 = await callAnthropic(ANTHROPIC_KEY, pass2Prompt(nicheName, broadIdeas), 0.3);
+      const text2 = await callAI(LOVABLE_API_KEY, pass2Prompt(nicheName, broadIdeas), 0.3);
       const parsed2 = extractJson(text2);
       productIdeas = parsed2.products;
       if (!Array.isArray(productIdeas) || productIdeas.length === 0) {

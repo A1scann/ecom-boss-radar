@@ -87,10 +87,10 @@ export default function NicheResults() {
   const handleErrorPayload = (payload: any) => {
     const code = String(payload?.error ?? "");
     const message = String(payload?.message ?? "");
-    if (code === "MISSING_ANTHROPIC_KEY") {
+    if (code === "MISSING_LOVABLE_AI_KEY") {
       setBanner({
         kind: "error",
-        message: "⚠️ Clé API Anthropic manquante — ajoutez ANTHROPIC_API_KEY dans Supabase Dashboard → Edge Functions → Secrets",
+        message: "⚠️ Clé Lovable AI manquante — activez Lovable Cloud pour ce projet (LOVABLE_API_KEY est normalement auto-configurée).",
       });
     } else if (code === "AI_GENERATION_FAILED") {
       setBanner({ kind: "warn", message: `⚠️ Erreur de génération IA : ${message}. Réessayez dans quelques secondes.` });
