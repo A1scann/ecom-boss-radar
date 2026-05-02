@@ -55,7 +55,7 @@ function extractJson(text: string): any {
   return JSON.parse(m[0]);
 }
 
-async function callAI(apiKey: string, prompt: string, _temperature?: number) {
+async function callAI(apiKey: string, prompt: string) {
   const res = await fetch(AI_URL, {
     method: "POST",
     headers: {
