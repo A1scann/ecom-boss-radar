@@ -2,6 +2,7 @@
 // Demo mode = use mockData. Live mode = call edge functions.
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { filterValidNiches, MIN_OPPORTUNITY_SCORE } from "@/lib/nicheFilter";
 
 export type DataMode = "demo" | "live";
 
