@@ -55,7 +55,7 @@ function extractJson(text: string): any {
   return JSON.parse(m[0]);
 }
 
-async function callAI(apiKey: string, prompt: string, _temperature?: number) {
+async function callAI(apiKey: string, prompt: string) {
   const res = await fetch(AI_URL, {
     method: "POST",
     headers: {
@@ -270,7 +270,7 @@ Deno.serve(async (req) => {
     // PASS 1 — broad generation
     let broadIdeas: Idea[];
     try {
-      const text1 = await callAI(LOVABLE_API_KEY, pass1Prompt(nicheName, subNiches), 1.0);
+      const text1 = await callAI(LOVABLE_API_KEY, pass1Prompt(nicheName, subNiches));
       const parsed1 = extractJson(text1);
       broadIdeas = parsed1.products;
       if (!Array.isArray(broadIdeas) || broadIdeas.length < 20) {
@@ -284,7 +284,7 @@ Deno.serve(async (req) => {
     // PASS 2 — critical filtering
     let productIdeas: Idea[];
     try {
-      const text2 = await callAI(LOVABLE_API_KEY, pass2Prompt(nicheName, broadIdeas), 0.3);
+      const text2 = await callAI(LOVABLE_API_KEY, pass2Prompt(nicheName, broadIdeas));
       const parsed2 = extractJson(text2);
       productIdeas = parsed2.products;
       if (!Array.isArray(productIdeas) || productIdeas.length === 0) {
