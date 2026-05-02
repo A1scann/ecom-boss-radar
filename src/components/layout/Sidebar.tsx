@@ -54,7 +54,6 @@ export const Sidebar = () => {
             src={logoNiche}
             alt="Niché"
             className="h-8 w-auto"
-            style={{ background: "transparent", mixBlendMode: "screen" }}
           />
           <div>
             <div className="text-sm font-bold tracking-tight">Niché</div>
