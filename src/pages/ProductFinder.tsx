@@ -270,6 +270,8 @@ const ProductFinder = () => {
   }, [live, slugFilter, nicheFilter]);
 
   const filtered = useMemo(() => discoverRows.filter((p) => {
+    if (p.verdict === "Rejeter") return false;
+    if (p.fitScore < MIN_OPPORTUNITY_SCORE) return false;
     if (p.margin < minMargin) return false;
     if (p.semrushSearches < minSearches) return false;
     if (excludeAmazon && p.amazonDominated) return false;
