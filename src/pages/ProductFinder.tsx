@@ -140,6 +140,8 @@ const ProductFinder = () => {
       .from("products_live")
       .select("*")
       .eq("sub_niche_slug", slug)
+      .gte("opportunity_score", MIN_OPPORTUNITY_SCORE)
+      .neq("verdict", "Rejeter")
       .order("opportunity_score", { ascending: false });
     if (error) console.error("[ProductFinder] products_live error:", error);
     setLive((data ?? []) as any);
