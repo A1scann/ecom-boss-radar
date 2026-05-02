@@ -369,9 +369,11 @@ export type Database = {
       products_live: {
         Row: {
           advertiser_count: number | null
+          angle: string | null
           buy_price_estimate: number | null
           buying_intent: number | null
           competition_difficulty: number | null
+          competition_level: string | null
           competitors: Json | null
           created_at: string
           data_source: string | null
@@ -386,6 +388,7 @@ export type Database = {
           offline_scarcity: number | null
           opportunity_score: number | null
           score_history: Json
+          search_volume: number | null
           seed_keyword: string | null
           sell_price_estimate: number | null
           source_url: string | null
@@ -394,12 +397,15 @@ export type Database = {
           thumbnail: string | null
           updated_at: string
           verdict: string | null
+          why: string | null
         }
         Insert: {
           advertiser_count?: number | null
+          angle?: string | null
           buy_price_estimate?: number | null
           buying_intent?: number | null
           competition_difficulty?: number | null
+          competition_level?: string | null
           competitors?: Json | null
           created_at?: string
           data_source?: string | null
@@ -414,6 +420,7 @@ export type Database = {
           offline_scarcity?: number | null
           opportunity_score?: number | null
           score_history?: Json
+          search_volume?: number | null
           seed_keyword?: string | null
           sell_price_estimate?: number | null
           source_url?: string | null
@@ -422,12 +429,15 @@ export type Database = {
           thumbnail?: string | null
           updated_at?: string
           verdict?: string | null
+          why?: string | null
         }
         Update: {
           advertiser_count?: number | null
+          angle?: string | null
           buy_price_estimate?: number | null
           buying_intent?: number | null
           competition_difficulty?: number | null
+          competition_level?: string | null
           competitors?: Json | null
           created_at?: string
           data_source?: string | null
@@ -442,6 +452,7 @@ export type Database = {
           offline_scarcity?: number | null
           opportunity_score?: number | null
           score_history?: Json
+          search_volume?: number | null
           seed_keyword?: string | null
           sell_price_estimate?: number | null
           source_url?: string | null
@@ -450,6 +461,7 @@ export type Database = {
           thumbnail?: string | null
           updated_at?: string
           verdict?: string | null
+          why?: string | null
         }
         Relationships: []
       }
