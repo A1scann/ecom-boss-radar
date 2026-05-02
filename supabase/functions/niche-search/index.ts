@@ -1,6 +1,6 @@
-// REQUIRES: ANTHROPIC_API_KEY in Supabase Dashboard → Edge Functions → Secrets
+// REQUIRES: LOVABLE_API_KEY (auto-provisioned by Lovable Cloud)
 // REQUIRES: SERPAPI_KEY (existing)
-// Architecture: 2-pass AI (broad@T=1.0 → filter@T=0.3) + SerpApi validation in chunks of 10
+// Architecture: 2-pass AI via Lovable AI Gateway (broad@T=1.0 → filter@T=0.3) + SerpApi validation in chunks of 10
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -11,8 +11,10 @@ import { admin, googleSerp, shoppingSerp } from "../_shared/serpapi.ts";
 
 const Body = z.object({ nicheSlug: z.string().min(1).max(160) });
 
-const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+// Lovable AI Gateway — using top-tier reasoning model (Claude Sonnet 4.5 isn't exposed via the gateway,
+// closest equivalent for strong JSON reasoning is google/gemini-2.5-pro).
+const AI_MODEL = "google/gemini-2.5-pro";
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const MARKETPLACE_DOMAINS = [
   "amazon.fr", "amazon.com",
@@ -53,25 +55,28 @@ function extractJson(text: string): any {
   return JSON.parse(m[0]);
 }
 
-async function callAnthropic(apiKey: string, prompt: string, temperature: number) {
-  const res = await fetch(ANTHROPIC_URL, {
+async function callAI(apiKey: string, prompt: string, temperature: number) {
+  const res = await fetch(AI_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
+      model: AI_MODEL,
       max_tokens: 4000,
       temperature,
       messages: [{ role: "user", content: prompt }],
     }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${JSON.stringify(data).slice(0, 400)}`);
-  const text = data?.content?.[0]?.text;
-  if (typeof text !== "string") throw new Error("Anthropic returned no text content");
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("Rate limit dépassé, réessayez dans un instant.");
+    if (res.status === 402) throw new Error("Crédits Lovable AI épuisés — ajoutez des crédits dans Settings → Workspace → Usage.");
+    throw new Error(`Lovable AI ${res.status}: ${JSON.stringify(data).slice(0, 400)}`);
+  }
+  const text = data?.choices?.[0]?.message?.content;
+  if (typeof text !== "string") throw new Error("Lovable AI returned no text content");
   return text;
 }
 
@@ -240,11 +245,11 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: "BAD_REQUEST", message: parsed.error.message }, 400);
     const { nicheSlug } = parsed.data;
 
-    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_KEY) {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
       return json({
-        error: "MISSING_ANTHROPIC_KEY",
-        message: "ANTHROPIC_API_KEY is not set in Supabase Edge Function secrets",
+        error: "MISSING_LOVABLE_AI_KEY",
+        message: "LOVABLE_API_KEY is not configured — enable Lovable Cloud for this project.",
       }, 500);
     }
 
@@ -262,7 +267,7 @@ Deno.serve(async (req) => {
     // PASS 1 — broad generation
     let broadIdeas: Idea[];
     try {
-      const text1 = await callAnthropic(ANTHROPIC_KEY, pass1Prompt(nicheName, subNiches), 1.0);
+      const text1 = await callAI(LOVABLE_API_KEY, pass1Prompt(nicheName, subNiches), 1.0);
       const parsed1 = extractJson(text1);
       broadIdeas = parsed1.products;
       if (!Array.isArray(broadIdeas) || broadIdeas.length < 20) {
@@ -276,7 +281,7 @@ Deno.serve(async (req) => {
     // PASS 2 — critical filtering
     let productIdeas: Idea[];
     try {
-      const text2 = await callAnthropic(ANTHROPIC_KEY, pass2Prompt(nicheName, broadIdeas), 0.3);
+      const text2 = await callAI(LOVABLE_API_KEY, pass2Prompt(nicheName, broadIdeas), 0.3);
       const parsed2 = extractJson(text2);
       productIdeas = parsed2.products;
       if (!Array.isArray(productIdeas) || productIdeas.length === 0) {
