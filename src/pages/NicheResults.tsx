@@ -11,13 +11,12 @@ import { cn } from "@/lib/utils";
 
 type Niche = { id: string; slug: string; name: string };
 type Sub = { id: string; slug: string; name: string };
-type Micro = { id: string; name: string; seed_keyword: string | null; sub_niche_id: string | null };
 
 type LiveProduct = {
   id: string;
   name: string;
   sub_niche_slug: string;
-  seed_keyword: string | null;
+  niche_slug: string | null;
   buy_price_estimate: number;
   sell_price_estimate: number;
   margin_potential: number;
@@ -27,21 +26,17 @@ type LiveProduct = {
   source_url: string | null;
 };
 
-type Job = { subSlug: string; subName: string; microName: string; seed: string };
-
 export default function NicheResults() {
   const { nicheSlug } = useParams();
   const { has, toggle } = useShortlist();
 
   const [niche, setNiche] = useState<Niche | null | undefined>(undefined);
   const [subs, setSubs] = useState<Sub[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [products, setProducts] = useState<LiveProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0, current: "" });
 
   const subBySlug = useMemo(() => {
     const m: Record<string, Sub> = {};
@@ -49,12 +44,11 @@ export default function NicheResults() {
     return m;
   }, [subs]);
 
-  const fetchProducts = async (seeds: string[]) => {
-    if (!seeds.length) { setProducts([]); return; }
+  const fetchProducts = async (slug: string) => {
     const { data } = await supabase
       .from("products_live")
-      .select("id, name, sub_niche_slug, seed_keyword, buy_price_estimate, sell_price_estimate, margin_potential, opportunity_score, verdict, competitors, source_url")
-      .in("seed_keyword", seeds)
+      .select("id, name, sub_niche_slug, niche_slug, buy_price_estimate, sell_price_estimate, margin_potential, opportunity_score, verdict, competitors, source_url")
+      .eq("niche_slug", slug)
       .gte("opportunity_score", 70)
       .neq("verdict", "Rejeter")
       .order("opportunity_score", { ascending: false });
@@ -71,54 +65,31 @@ export default function NicheResults() {
       if (!n) { if (!cancelled) { setNiche(null); setLoading(false); } return; }
       const { data: ss } = await supabase
         .from("sub_niches").select("id, slug, name").eq("niche_id", n.id).order("name");
-      const subList = (ss ?? []) as Sub[];
-      const { data: ms } = subList.length
-        ? await supabase
-            .from("micro_niches")
-            .select("id, name, seed_keyword, sub_niche_id")
-            .in("sub_niche_id", subList.map((s) => s.id))
-        : { data: [] as Micro[] };
-      const microList = (ms ?? []) as Micro[];
-      const subById = new Map(subList.map((s) => [s.id, s]));
-      const flat: Job[] = microList
-        .filter((mi) => mi.seed_keyword && mi.sub_niche_id && subById.has(mi.sub_niche_id))
-        .map((mi) => {
-          const sub = subById.get(mi.sub_niche_id!)!;
-          return { subSlug: sub.slug, subName: sub.name, microName: mi.name, seed: mi.seed_keyword as string };
-        });
       if (cancelled) return;
       setNiche(n as Niche);
-      setSubs(subList);
-      setJobs(flat);
-      await fetchProducts(flat.map((j) => j.seed));
+      setSubs((ss ?? []) as Sub[]);
+      await fetchProducts(nicheSlug);
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [nicheSlug]);
 
   const runSearch = async () => {
-    if (!jobs.length) {
-      toast.error("Aucune micro-niche à interroger pour cette niche.");
-      return;
-    }
+    if (!nicheSlug) return;
     setSearching(true);
-    setProgress({ done: 0, total: jobs.length, current: jobs[0]?.microName ?? "" });
     try {
-      for (let i = 0; i < jobs.length; i++) {
-        const job = jobs[i];
-        setProgress({ done: i, total: jobs.length, current: job.microName });
-        try {
-          await supabase.functions.invoke("product-discover", {
-            body: { seed: job.seed, subNicheSlug: job.subSlug, persist: true },
-          });
-        } catch (e) {
-          console.error("product-discover error", job, e);
-        }
-      }
-      setProgress({ done: jobs.length, total: jobs.length, current: "" });
-      await fetchProducts(jobs.map((j) => j.seed));
+      const { data, error } = await supabase.functions.invoke("niche-search", {
+        body: { nicheSlug },
+      });
+      if (error) throw error;
+      await fetchProducts(nicheSlug);
       setSearched(true);
-      toast.success("Recherche terminée");
+      const total = (data as any)?.total ?? 0;
+      const subCount = Object.keys((data as any)?.bySubNiche ?? {}).length;
+      toast.success(`Recherche terminée — ${total} produits dans ${subCount} sous-niches`);
+    } catch (e) {
+      console.error("niche-search error", e);
+      toast.error("La recherche a échoué — réessayez dans un instant.");
     } finally {
       setSearching(false);
     }
@@ -133,22 +104,21 @@ export default function NicheResults() {
   }
   if (niche === null) return <Navigate to="/" replace />;
 
-  // group by sub_niche_slug, falling back to the job's subSlug via seed_keyword
-  const seedToSub = new Map(jobs.map((j) => [j.seed, j.subSlug]));
+  // group by sub_niche_slug
   const grouped = new Map<string, LiveProduct[]>();
   products.forEach((p) => {
-    const slug =
-      p.sub_niche_slug ||
-      (p.seed_keyword ? seedToSub.get(p.seed_keyword) : undefined) ||
-      "";
+    const slug = p.sub_niche_slug;
     if (!slug) return;
     const arr = grouped.get(slug) ?? [];
     arr.push(p);
     grouped.set(slug, arr);
   });
   const subSectionEntries = Array.from(grouped.entries())
-    .map(([slug, items]) => ({ slug, sub: subBySlug[slug], items }))
-    .filter((e) => e.sub)
+    .map(([slug, items]) => ({
+      slug,
+      sub: subBySlug[slug] ?? { id: slug, slug, name: slug } as Sub,
+      items,
+    }))
     .sort((a, b) => a.sub.name.localeCompare(b.sub.name));
 
   const totalProducts = products.length;
@@ -166,15 +136,11 @@ export default function NicheResults() {
       <PageHeader
         eyebrow="Recherche produit"
         title={`${niche.name} — Recherche produit`}
-        description={
-          jobs.length
-            ? `${subs.length} sous-niches · ${jobs.length} requêtes prêtes à analyser via le moteur de scoring.`
-            : `${subs.length} sous-niches · aucune micro-niche n'est disponible pour cette niche.`
-        }
+        description={`${subs.length} sous-niches · recherche large de produits high ticket via le moteur de scoring.`}
         actions={
           <Button
             onClick={runSearch}
-            disabled={searching || jobs.length === 0}
+            disabled={searching}
             className="bg-success text-success-foreground hover:bg-success/90"
           >
             {searching ? (
@@ -190,16 +156,10 @@ export default function NicheResults() {
       />
 
       {searching && (
-        <div className="rounded-xl border border-border bg-gradient-card p-4 space-y-2 shadow-card-premium">
-          <div className="text-sm">
-            Analyse en cours… <span className="font-semibold">{progress.current}</span>{" "}
-            <span className="text-muted-foreground">({progress.done}/{progress.total})</span>
-          </div>
-          <div className="h-1.5 w-full bg-muted/40 rounded overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
-            />
+        <div className="rounded-xl border border-border bg-gradient-card p-4 shadow-card-premium">
+          <div className="text-sm flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Analyse de la niche en cours… <span className="text-muted-foreground">(jusqu'à 30 s)</span>
           </div>
         </div>
       )}
@@ -215,9 +175,7 @@ export default function NicheResults() {
           <div className="text-sm text-muted-foreground">
             {searched
               ? "Recherche terminée — 0 produits passent le seuil de score (≥ 70). Essayez de relancer la recherche."
-              : jobs.length
-                ? "Aucun résultat pour le moment — lance la recherche pour analyser les sous-niches."
-                : "Aucune micro-niche n'est encore définie pour cette niche, la recherche n'est pas disponible."}
+              : "Aucun résultat pour le moment — lance la recherche pour analyser la niche."}
           </div>
         </div>
       ) : (
