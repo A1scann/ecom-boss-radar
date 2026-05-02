@@ -122,8 +122,14 @@ const NicheRadar = () => {
   }, [macros]);
 
   const niches: CardNiche[] = useMemo(() => {
-    if (usingLive) return liveOpps.map((o) => fromLive(o, macroNameById.get(o.macro_id ?? "") ?? "—"));
-    return mockSubs.map(fromMock);
+    const raw = usingLive
+      ? liveOpps.map((o) => fromLive(o, macroNameById.get(o.macro_id ?? "") ?? "—"))
+      : mockSubs.map(fromMock);
+    const before = raw.length;
+    const cleaned = raw.filter((n) => n.opportunityScore >= MIN_OPPORTUNITY_SCORE && isValidNiche(n.name));
+    const excluded = before - cleaned.length;
+    if (excluded > 0) console.log(`[NicheFilter] ${excluded} entries excluded as products`);
+    return cleaned;
   }, [usingLive, liveOpps, macroNameById]);
 
   const watchlist = useMemo(
