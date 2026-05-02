@@ -61,7 +61,7 @@ export type Filters = {
 export const defaultFilters: Filters = {
   macroId: null,
   mode: "all",
-  minOpportunity: 0,
+  minOpportunity: MIN_OPPORTUNITY_SCORE,
   minMargin: 0,
   maxCompetition: 12,
   minIntent: 0,
