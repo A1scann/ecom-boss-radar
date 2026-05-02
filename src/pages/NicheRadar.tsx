@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResponsiveContainer, LineChart, Line } from "recharts";
 import { useMacros, useOpportunities, defaultFilters, type Opportunity, type Macro } from "@/hooks/useOpportunities";
+import { isValidNiche, MIN_OPPORTUNITY_SCORE } from "@/lib/nicheFilter";
 import {
   Sparkles, ArrowRight, TrendingUp, TrendingDown, Activity,
   Flame, Eye, Layers, Radio, Clock,
