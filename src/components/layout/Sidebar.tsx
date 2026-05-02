@@ -53,7 +53,7 @@ export const Sidebar = () => {
           <img
             src={logoNiche}
             alt="Niché"
-            className="h-8 w-auto"
+            className="h-9 w-auto object-contain"
           />
           <div>
             <div className="text-sm font-bold tracking-tight">Niché</div>
