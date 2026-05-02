@@ -304,6 +304,9 @@ const ProductFinder = () => {
           </div>
         }
       />
+      <div className="mb-4 -mt-2 text-xs text-muted-foreground">
+        Affichage des produits scorés ≥ {MIN_OPPORTUNITY_SCORE} · Marge ≥ {MIN_PRODUCT_MARGIN}€
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mb-4">
         <TabsList>
