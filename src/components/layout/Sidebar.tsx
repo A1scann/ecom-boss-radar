@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Radar, Package, Target, Sparkles, Eye, Bookmark, Zap, Globe } from "lucide-react";
+import { LayoutDashboard, Target, Sparkles, Eye, Bookmark, Globe } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import logoNiche from "@/assets/logo-niche.png";
 
-const items = [
+const items: { to: string; label: string; icon: any; dynamic?: boolean }[] = [
   { to: "/", label: "Découvrir des niches", icon: Globe },
-  { to: "/", label: "Radar de niches", icon: Radar },
   { to: "/insights", label: "Tableau de bord", icon: LayoutDashboard },
-  { to: "/live", label: "Signaux live", icon: Zap, dynamic: true as const },
-  { to: "/products", label: "Trouver des produits", icon: Package },
   { to: "/scoring", label: "Scoring produit", icon: Target },
   { to: "/angles", label: "Angles marketing", icon: Sparkles },
   { to: "/spy", label: "Analyse concurrents", icon: Eye },
