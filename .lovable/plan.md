@@ -1,87 +1,98 @@
-# Niche-wide product search
+# 2-pass AI niche-search — implementation plan
 
-Today, `NicheResults` loops over every micro-niche seed and invokes `product-discover` once per seed. That is slow, wastes SerpApi credits, and only finds products tied to a pre-defined seed. The new `niche-search` function does one broad sweep over the niche, classifies each result into a sub-niche, and persists everything in a single call.
+All 4 parts deploy together in one go.
 
-## 1. New edge function — `supabase/functions/niche-search/index.ts`
+## Part 1 — Migration (`products_live`)
 
-**Input** (zod-validated): `{ nicheSlug: string }`
-
-**Steps:**
-
-1. Load the niche: `SELECT id, name FROM niches WHERE slug = nicheSlug` (404 if missing).
-2. Load all sub-niches: `SELECT id, slug, name, description FROM sub_niches WHERE niche_id = niche.id`.
-3. Build up to 5 broad Google Shopping queries:
-   - `"{niche.name} produit high ticket france"`
-   - For each sub-niche (capped to 4): `"{sub_niche.name} acheter prix"`
-4. Call `shoppingSerp(query)` for each (already cached + admin client wired in `_shared/serpapi.ts`).
-5. Flatten `shopping_results`, then dedupe by fuzzy title:
-   - Normalize titles (lowercase, strip punctuation, collapse spaces).
-   - Use a token-overlap ratio (Jaccard on word sets); skip a candidate if ratio > 0.8 with any kept candidate. Keep the one with the most signal (price present, more sources).
-6. **Classify each candidate** into a sub-niche:
-   - For every sub-niche, build a keyword bag from `name` + `description` (lowercased tokens, length ≥ 3, stopwords removed).
-   - Score = count of sub-niche tokens appearing in the product title.
-   - Pick the highest-scoring sub-niche; ties broken by sub-niche name length (longer = more specific). If no token matches, fallback to the first sub-niche.
-7. **Score each candidate** (matches the spec):
-   - `price = extracted_price` (skip candidate if no price)
-   - `margin_potential = round(price * 0.35)`
-   - `opportunity_score = 60`
-     - `+10` if `price > 200`
-     - `+10` if `margin_potential > 150`
-     - `+10` if no domain in the query's shopping_results contains "amazon" within the top 5
-     - `+10` if total advertisers across queries < 5
-   - `verdict = score>=80 ? "Prioritaire" : score>=70 ? "À tester" : "Rejeter"`
-8. **Upsert** into `products_live` with `onConflict: "name,sub_niche_slug"`:
-   - `name`, `sub_niche_slug`, `niche_slug`, `sub_niche_id` (looked up from `sub_niches_live` by slug, nullable),
-   - `buy_price_estimate = round(price * 0.4)`, `sell_price_estimate = round(price)`, `margin_potential`,
-   - `opportunity_score`, `verdict`, `seed_keyword = query`,
-   - `data_source: "serpapi"`, `last_signal_at: now()`, `source_url`, `thumbnail`.
-9. **Response:** `{ niche: niche.name, total: <persisted count>, bySubNiche: { [slug]: count } }`.
-
-CORS + JSON helper copied from `product-discover`. No JWT required (matches sibling functions). Uses `admin` client from `_shared/serpapi.ts`.
-
-## 2. Schema migration
-
-`products_live` is missing the `niche_slug` column the spec requires:
+New file `supabase/migrations/<ts>_niche_search_fields.sql`:
 
 ```sql
 ALTER TABLE public.products_live
-  ADD COLUMN IF NOT EXISTS niche_slug text;
+  ADD COLUMN IF NOT EXISTS search_volume integer,
+  ADD COLUMN IF NOT EXISTS competition_level text,
+  ADD COLUMN IF NOT EXISTS why text,
+  ADD COLUMN IF NOT EXISTS angle text;
 
-CREATE INDEX IF NOT EXISTS products_live_niche_slug_idx
-  ON public.products_live (niche_slug);
+-- Dedupe before adding unique indexes
+DELETE FROM public.products_live a USING public.products_live b
+WHERE a.ctid < b.ctid AND a.name = b.name
+  AND a.niche_slug IS NOT DISTINCT FROM b.niche_slug
+  AND a.niche_slug IS NOT NULL;
+
+DELETE FROM public.products_live a USING public.products_live b
+WHERE a.ctid < b.ctid AND a.name = b.name AND a.sub_niche_slug = b.sub_niche_slug;
+
+CREATE UNIQUE INDEX IF NOT EXISTS products_live_name_niche_slug_uniq
+  ON public.products_live (name, niche_slug) WHERE niche_slug IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS products_live_name_sub_niche_slug_uniq
+  ON public.products_live (name, sub_niche_slug);
 ```
 
-No RLS changes (existing public-read policy already covers new columns).
+This unblocks `onConflict: "name,niche_slug"` (new) and keeps `onConflict: "name,sub_niche_slug"` (used by `product-discover`) working.
 
-## 3. `src/pages/NicheResults.tsx` rewrite of `runSearch`
+## Part 2 — `supabase/functions/niche-search/index.ts` (full rewrite)
 
-Replace the per-seed loop with a single invocation:
+Header comment:
+```
+// REQUIRES: ANTHROPIC_API_KEY in Supabase Dashboard → Edge Functions → Secrets
+// REQUIRES: SERPAPI_KEY (existing)
+// Architecture: 2-pass AI (broad@T=1.0 → filter@T=0.3) + SerpApi validation in chunks of 10
+```
 
-- Drop the `progress`/`jobs` per-seed UI; replace with a single indeterminate spinner ("Analyse de la niche en cours…").
-- `runSearch` calls `supabase.functions.invoke("niche-search", { body: { nicheSlug } })`.
-- After the call, refetch products by `niche_slug`:
-  ```ts
-  await supabase.from("products_live")
-    .select("...")
-    .eq("niche_slug", nicheSlug)
-    .gte("opportunity_score", 70)
-    .neq("verdict", "Rejeter")
-    .order("opportunity_score", { ascending: false });
-  ```
-- Update the cache check on mount to use the same `niche_slug` filter (replaces the `seed_keyword IN (...)` query, which depended on micro-niches existing).
-- Grouping stays by `sub_niche_slug` — products now always have it set by `niche-search`.
-- Keep the existing empty-state copy (already covers the "0 produits ≥ 70" case via `searched`).
-- The "Lancer la recherche" button is enabled whenever a niche is loaded — micro-niches are no longer required.
-- Show the result toast using the function's `total` and number of sub-niches in `bySubNiche`.
+Flow:
+1. Validate `{ nicheSlug }` (zod). CORS preflight.
+2. Check `ANTHROPIC_API_KEY` env → if missing return `500 { error: "MISSING_ANTHROPIC_KEY", message }`.
+3. Load niche by slug (404 `NICHE_NOT_FOUND`) and its sub_niches (400 `NO_SUB_NICHES`).
+4. **Pass 1**: POST `https://api.anthropic.com/v1/messages` model `claude-sonnet-4-5-20250929`, temp 1.0, max_tokens 4000, exact 50-ideas prompt from spec. Strip ``` fences, regex-extract `{...}`, JSON.parse. Require ≥20 ideas else throw → `AI_GENERATION_FAILED`.
+5. **Pass 2**: same endpoint, temp 0.3, exact filtering prompt with `JSON.stringify(broadIdeas, null, 2)` interpolated. Same robust parse. Require ≥1 product else throw.
+6. **SerpApi validation**: chunks of 10 via `Promise.all([googleSerp(kw), shoppingSerp(kw)])` per product, per-product try/catch. Failures counted, not fatal.
+7. **Compute signals** per product:
+   - `adDensity` = ads + shopping_ads count from serpData
+   - `searchDemand` = clamp(0..100, organic*5 + adDensity*4)
+   - `cpcEstimate` = `adDensity * 0.8` (rounded 2dp)
+   - `competitionLevel` = High / Medium / Low at thresholds 8, 4
+   - `marketplaceDominance` = % of organic links from amazon.fr, cdiscount.com, leroymerlin.fr, fnac.com, darty.com
+   - `serpWeakness` = 100 minus snippet-length penalty, knowledge_graph penalty, related_questions penalty, marketplace penalty (clamped 0..100)
+   - `realPriceFR` = median of `shopping_results[].extracted_price`, fallback `estimated_price_eur`
+   - `marginPotential` = round(realPriceFR * 0.35)
+8. **Score** exactly per spec (5 × 20-pt bonuses), verdict at 80 / 70.
+9. **Classify** AI's `sub_niche` string → exact name match (normalized) → token-overlap fallback → first sub-niche fallback (with console.warn).
+10. **Persist all** (incl. <70) via upsert on `(name, niche_slug)` with full field set including `search_volume`, `competition_level`, `why`, `angle`, `cpc`, `serp_weakness_score`, `marketplace_dominance_score`, `seed_keyword`, `data_source: "ai+serpapi"`, `last_signal_at`.
+11. Return `{ niche, total, scored, bySubNiche, errors }`.
 
-## 4. Files
+All Anthropic/SerpApi failures wrapped to return structured `{ error, message }` with status 500.
 
-- **New:** `supabase/functions/niche-search/index.ts`
-- **New migration:** add `niche_slug` column + index to `products_live`
-- **Edited:** `src/pages/NicheResults.tsx` (runSearch, cache fetch, header copy, button enable rule)
+## Part 3 — `src/pages/NicheResults.tsx` (rewrite)
 
-## 5. Notes
+- Extend `LiveProduct` type with `cpc`, `search_volume`, `competition_level`, `serp_weakness_score`, `marketplace_dominance_score`, `why`, `angle`.
+- `fetchProducts`: SELECT all new columns. **Drop** `.gte("opportunity_score", 70)` and `.neq("verdict","Rejeter")` from the query — fetch everything, filter client-side.
+- New state: `showAll: boolean` (default false), `banner: { kind: "error" | "warn", message } | null`.
+- `runSearch`: invoke function; if `data.error` or function returns structured error, parse via `error.context` and route to `handleErrorPayload` mapping codes:
+  - `MISSING_ANTHROPIC_KEY` → red banner: *"⚠️ Clé API Anthropic manquante — ajoutez ANTHROPIC_API_KEY dans Supabase Dashboard → Edge Functions → Secrets"*
+  - `AI_GENERATION_FAILED` → orange banner with message
+  - `SERPAPI_FAILED` → orange banner with message
+  - other → orange banner with message
+- Banner rendered above PageHeader, dismissible (X button).
+- Below the search button: italic muted helper *"L'IA va générer 50 idées larges, filtrer les 30 meilleures, puis SerpApi valide chaque idée sur le marché français. Cela peut prendre 60 à 90 secondes."*
+- Loader hint upgraded to *"(60–90 s)"*.
+- Header row above sections: count `{qualified}/{total} produits qualifiés (≥ 70)` + checkbox *Afficher tous les produits*.
+- New `<ProductCard>` subcomponent per spec:
+  - Top: `angle` outline badge (if any), then `<h3>` name + external link, then italic muted `why`.
+  - Right: `ScorePill` (existing component already color-codes).
+  - Three-up grid: Achat / Vente FR / Marge (green).
+  - Two-up: CPC estimé (€) + Concurrence colored badge (Low=green, Medium=orange, High=red).
+  - SERP Weakness label + `<Progress value={...} className="h-1.5" />` from `@/components/ui/progress`.
+  - Verdict badge (Prioritaire green / À tester orange / Rejeter gray).
+  - Existing shortlist + `<SubmitToCoach />` buttons preserved.
 
-- Existing rows without `niche_slug` won't appear in the cache view; the user can re-run the search to backfill.
-- The 5-query cap means very broad niches with many sub-niches won't get one query per sub-niche — sub-niche assignment falls back to keyword classification on the broad query results, which is the intended behavior.
-- `product-discover` is left untouched (still used by the watchlist refresh flow).
+## Part 4 — Post-deploy reminder
+
+After deploy you must add `ANTHROPIC_API_KEY` in **Connectors → Lovable Cloud → Edge Function Secrets**. Until then, clicking "Lancer la recherche" surfaces the red MISSING_ANTHROPIC_KEY banner with the exact instructions. SerpApi key is already configured.
+
+## Files touched
+
+- `supabase/migrations/<ts>_niche_search_fields.sql` (new)
+- `supabase/functions/niche-search/index.ts` (rewrite)
+- `src/pages/NicheResults.tsx` (rewrite)
+- `src/integrations/supabase/types.ts` (auto-regenerated)
