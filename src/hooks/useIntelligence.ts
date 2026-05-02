@@ -179,9 +179,11 @@ export function useLiveSubNiches(enabled: boolean) {
       const { data, error } = await supabase
         .from("sub_niches_live")
         .select("*")
+        .gte("opportunity_score", MIN_OPPORTUNITY_SCORE)
         .order("opportunity_score", { ascending: false });
       if (error) throw error;
-      setData((data ?? []) as LiveSubNiche[]);
+      const valid = filterValidNiches((data ?? []) as LiveSubNiche[], "useLiveSubNiches");
+      setData(valid);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally { setLoading(false); }
