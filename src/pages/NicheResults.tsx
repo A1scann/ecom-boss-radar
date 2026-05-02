@@ -17,6 +17,7 @@ type LiveProduct = {
   id: string;
   name: string;
   sub_niche_slug: string;
+  seed_keyword: string | null;
   buy_price_estimate: number;
   sell_price_estimate: number;
   margin_potential: number;
@@ -39,6 +40,7 @@ export default function NicheResults() {
   const [loading, setLoading] = useState(true);
 
   const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, current: "" });
 
   const subBySlug = useMemo(() => {
@@ -47,12 +49,12 @@ export default function NicheResults() {
     return m;
   }, [subs]);
 
-  const fetchProducts = async (slugs: string[]) => {
-    if (!slugs.length) { setProducts([]); return; }
+  const fetchProducts = async (seeds: string[]) => {
+    if (!seeds.length) { setProducts([]); return; }
     const { data } = await supabase
       .from("products_live")
-      .select("id, name, sub_niche_slug, buy_price_estimate, sell_price_estimate, margin_potential, opportunity_score, verdict, competitors, source_url")
-      .in("sub_niche_slug", slugs)
+      .select("id, name, sub_niche_slug, seed_keyword, buy_price_estimate, sell_price_estimate, margin_potential, opportunity_score, verdict, competitors, source_url")
+      .in("seed_keyword", seeds)
       .gte("opportunity_score", 70)
       .neq("verdict", "Rejeter")
       .order("opportunity_score", { ascending: false });
@@ -88,7 +90,7 @@ export default function NicheResults() {
       setNiche(n as Niche);
       setSubs(subList);
       setJobs(flat);
-      await fetchProducts(subList.map((s) => s.slug));
+      await fetchProducts(flat.map((j) => j.seed));
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -114,7 +116,8 @@ export default function NicheResults() {
         }
       }
       setProgress({ done: jobs.length, total: jobs.length, current: "" });
-      await fetchProducts(subs.map((s) => s.slug));
+      await fetchProducts(jobs.map((j) => j.seed));
+      setSearched(true);
       toast.success("Recherche terminée");
     } finally {
       setSearching(false);
@@ -130,12 +133,18 @@ export default function NicheResults() {
   }
   if (niche === null) return <Navigate to="/" replace />;
 
-  // group by sub_niche_slug
+  // group by sub_niche_slug, falling back to the job's subSlug via seed_keyword
+  const seedToSub = new Map(jobs.map((j) => [j.seed, j.subSlug]));
   const grouped = new Map<string, LiveProduct[]>();
   products.forEach((p) => {
-    const arr = grouped.get(p.sub_niche_slug) ?? [];
+    const slug =
+      p.sub_niche_slug ||
+      (p.seed_keyword ? seedToSub.get(p.seed_keyword) : undefined) ||
+      "";
+    if (!slug) return;
+    const arr = grouped.get(slug) ?? [];
     arr.push(p);
-    grouped.set(p.sub_niche_slug, arr);
+    grouped.set(slug, arr);
   });
   const subSectionEntries = Array.from(grouped.entries())
     .map(([slug, items]) => ({ slug, sub: subBySlug[slug], items }))
@@ -204,9 +213,11 @@ export default function NicheResults() {
       {!hasCache && !searching ? (
         <div className="rounded-xl border border-dashed border-border bg-gradient-card p-10 text-center">
           <div className="text-sm text-muted-foreground">
-            {jobs.length
-              ? "Aucun résultat pour le moment — lance la recherche pour analyser les sous-niches."
-              : "Aucune micro-niche n'est encore définie pour cette niche, la recherche n'est pas disponible."}
+            {searched
+              ? "Recherche terminée — 0 produits passent le seuil de score (≥ 70). Essayez de relancer la recherche."
+              : jobs.length
+                ? "Aucun résultat pour le moment — lance la recherche pour analyser les sous-niches."
+                : "Aucune micro-niche n'est encore définie pour cette niche, la recherche n'est pas disponible."}
           </div>
         </div>
       ) : (
@@ -281,7 +292,9 @@ export default function NicheResults() {
 
           {hasCache && subSectionEntries.length === 0 && (
             <div className="rounded-xl border border-dashed border-border bg-gradient-card p-10 text-center text-sm text-muted-foreground">
-              Aucun produit trouvé — réessayez ou choisissez une autre niche.
+              {searched
+                ? "Recherche terminée — 0 produits passent le seuil de score (≥ 70). Essayez de relancer la recherche."
+                : "Aucun produit trouvé — réessayez ou choisissez une autre niche."}
             </div>
           )}
         </div>

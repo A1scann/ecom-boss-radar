@@ -385,6 +385,7 @@ export type Database = {
           offline_scarcity: number | null
           opportunity_score: number | null
           score_history: Json
+          seed_keyword: string | null
           sell_price_estimate: number | null
           source_url: string | null
           sub_niche_id: string | null
@@ -411,6 +412,7 @@ export type Database = {
           offline_scarcity?: number | null
           opportunity_score?: number | null
           score_history?: Json
+          seed_keyword?: string | null
           sell_price_estimate?: number | null
           source_url?: string | null
           sub_niche_id?: string | null
@@ -437,6 +439,7 @@ export type Database = {
           offline_scarcity?: number | null
           opportunity_score?: number | null
           score_history?: Json
+          seed_keyword?: string | null
           sell_price_estimate?: number | null
           source_url?: string | null
           sub_niche_id?: string | null

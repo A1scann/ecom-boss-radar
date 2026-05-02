@@ -219,6 +219,7 @@ Deno.serve(async (req) => {
         ...c,
         sub_niche_slug: subNicheSlug,
         sub_niche_id: subNiche?.id ?? null,
+        seed_keyword: seed,
         data_source: "serpapi",
         last_signal_at: new Date().toISOString(),
         score_history: [{ date: today, score: c.opportunity_score }],
