@@ -89,15 +89,18 @@ export function useOpportunities(filters: Filters) {
     let q = supabase.from("sub_niches_live").select("*", { count: "exact" });
     if (filters.macroId) q = q.eq("macro_id", filters.macroId);
     if (filters.mode !== "all") q = q.eq("discovery_mode", filters.mode);
-    if (filters.minOpportunity > 0) q = q.gte("opportunity_score", filters.minOpportunity);
+    // Hard floor: never show anything below MIN_OPPORTUNITY_SCORE (verdict "Rejeter").
+    const floor = Math.max(MIN_OPPORTUNITY_SCORE, filters.minOpportunity || 0);
+    q = q.gte("opportunity_score", floor);
     if (filters.minMargin > 0) q = q.gte("margin_potential", filters.minMargin);
     if (filters.maxCompetition < 12) q = q.lte("advertiser_density", filters.maxCompetition);
     if (filters.maturity) q = q.eq("maturity", filters.maturity);
     if (filters.search.trim()) q = q.ilike("name", `%${filters.search.trim()}%`);
     q = q.order("opportunity_score", { ascending: false }).limit(2000);
     const { data, count } = await q;
-    setData((data ?? []) as Opportunity[]);
-    setCount(count ?? 0);
+    const valid = filterValidNiches((data ?? []) as Opportunity[], "useOpportunities");
+    setData(valid);
+    setCount(valid.length);
     setLoading(false);
   }, [filters]);
 
