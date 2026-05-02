@@ -5,13 +5,13 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const weights = [
-  { key: "searchDemand", label: "Search Demand", max: 20 },
-  { key: "buyingIntent", label: "Buying Intent", max: 20 },
-  { key: "margin", label: "Margin Potential", max: 20 },
-  { key: "competitionWeakness", label: "Competition Weakness", max: 15 },
-  { key: "offlineScarcity", label: "Offline Scarcity", max: 10 },
-  { key: "offerAngle", label: "Offer Angle", max: 10 },
-  { key: "ecombossFit", label: "Niché Fit", max: 5 },
+  { key: "searchDemand", label: "Demande de recherche", max: 20 },
+  { key: "buyingIntent", label: "Intention d'achat", max: 20 },
+  { key: "margin", label: "Potentiel de marge", max: 20 },
+  { key: "competitionWeakness", label: "Faiblesse concurrentielle", max: 15 },
+  { key: "offlineScarcity", label: "Rareté offline", max: 10 },
+  { key: "offerAngle", label: "Angle d'offre", max: 10 },
+  { key: "ecombossFit", label: "Adéquation Niché", max: 5 },
 ] as const;
 
 const ScoringEngine = () => {

@@ -212,7 +212,14 @@ Deno.serve(async (req) => {
     const depth = (parent?.depth ?? 0) + 1;
     const macro_id = macro?.id ?? parent?.macro_id ?? null;
 
-    const rows = candidates.map((c: any) => {
+    const PRODUCT_RE = /[0-9]|raboteuse|dégauchisseuse|amplificateur|thunderbolt|stairlift|aquarium|midi|graveur|trancheuse|déshydrateur|tondeuse|tapis de course|tapis roulant|arbre à chat|scie sur table|tablette|démonte|mécanicien|ventilateur toit|cnc bois|laser/i;
+    const validCandidates = candidates.filter((c: any) => {
+      const name = String(c?.name ?? "");
+      return name.length <= 38 && !PRODUCT_RE.test(name);
+    });
+    const skipped = candidates.length - validCandidates.length;
+
+    const rows = validCandidates.map((c: any) => {
       const scores = scoreNiche(c.name, c, mode);
       return {
         slug: slugify(c.name, mode),
@@ -231,6 +238,10 @@ Deno.serve(async (req) => {
       };
     });
 
+    if (rows.length === 0) {
+      return json({ ok: true, mode, generated: 0, skipped, reason: "all_candidates_were_products" });
+    }
+
     // Insert
     const { data: inserted, error } = await admin
       .from("sub_niches_live")
@@ -245,7 +256,7 @@ Deno.serve(async (req) => {
       await admin.from("opportunity_edges").insert(edges);
     }
 
-    return json({ ok: true, mode, generated: inserted?.length ?? 0, niches: inserted });
+    return json({ ok: true, mode, generated: inserted?.length ?? 0, skipped, niches: inserted });
   } catch (e) {
     console.error("niche-expand", e);
     return json({ error: e instanceof Error ? e.message : String(e) }, 500);
