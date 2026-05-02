@@ -375,6 +375,7 @@ export type Database = {
           competition_difficulty: number | null
           competition_level: string | null
           competitors: Json | null
+          cpc: number | null
           created_at: string
           data_source: string | null
           id: string
@@ -407,6 +408,7 @@ export type Database = {
           competition_difficulty?: number | null
           competition_level?: string | null
           competitors?: Json | null
+          cpc?: number | null
           created_at?: string
           data_source?: string | null
           id?: string
@@ -439,6 +441,7 @@ export type Database = {
           competition_difficulty?: number | null
           competition_level?: string | null
           competitors?: Json | null
+          cpc?: number | null
           created_at?: string
           data_source?: string | null
           id?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.products_live ADD COLUMN IF NOT EXISTS cpc NUMERIC DEFAULT 0;
