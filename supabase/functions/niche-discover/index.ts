@@ -11,6 +11,9 @@ const Body = z.object({
   persist: z.boolean().default(true),
 });
 
+const PRODUCT_RE = /[0-9]|raboteuse|dégauchisseuse|amplificateur|thunderbolt|stairlift|aquarium|midi|graveur|trancheuse|déshydrateur|tondeuse|tapis de course|tapis roulant|arbre à chat|scie sur table|tablette|démonte|mécanicien|ventilateur toit|cnc bois|laser/i;
+const isProductSeed = (s: string) => PRODUCT_RE.test(s) || s.length > 38;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -19,6 +22,10 @@ Deno.serve(async (req) => {
       return json({ error: parsed.error.flatten().fieldErrors }, 400);
     }
     const { seed, macroSlug, persist } = parsed.data;
+
+    if (isProductSeed(seed)) {
+      return json({ skipped: true, reason: "product_not_niche", seed });
+    }
 
     // 1. Pull all SerpApi signals in parallel
     const [trend, related, ac, serp, shop] = await Promise.all([
