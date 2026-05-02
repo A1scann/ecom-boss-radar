@@ -381,6 +381,7 @@ export type Database = {
           id: string
           last_signal_at: string
           margin_potential: number | null
+          marketplace_dominance_score: number | null
           max_price: number | null
           median_price: number | null
           min_price: number | null
@@ -392,6 +393,7 @@ export type Database = {
           search_volume: number | null
           seed_keyword: string | null
           sell_price_estimate: number | null
+          serp_weakness_score: number | null
           source_url: string | null
           sub_niche_id: string | null
           sub_niche_slug: string
@@ -414,6 +416,7 @@ export type Database = {
           id?: string
           last_signal_at?: string
           margin_potential?: number | null
+          marketplace_dominance_score?: number | null
           max_price?: number | null
           median_price?: number | null
           min_price?: number | null
@@ -425,6 +428,7 @@ export type Database = {
           search_volume?: number | null
           seed_keyword?: string | null
           sell_price_estimate?: number | null
+          serp_weakness_score?: number | null
           source_url?: string | null
           sub_niche_id?: string | null
           sub_niche_slug: string
@@ -447,6 +451,7 @@ export type Database = {
           id?: string
           last_signal_at?: string
           margin_potential?: number | null
+          marketplace_dominance_score?: number | null
           max_price?: number | null
           median_price?: number | null
           min_price?: number | null
@@ -458,6 +463,7 @@ export type Database = {
           search_volume?: number | null
           seed_keyword?: string | null
           sell_price_estimate?: number | null
+          serp_weakness_score?: number | null
           source_url?: string | null
           sub_niche_id?: string | null
           sub_niche_slug?: string
