@@ -37,6 +37,17 @@ export default function SubNicheTaxonomy() {
   const [products, setProducts] = useState<LiveProduct[]>([]);
   const [searchingId, setSearchingId] = useState<string | null>(null);
 
+  const fetchProducts = async (subSlug: string) => {
+    const { data } = await supabase
+      .from("products_live")
+      .select("id, name, sub_niche_slug, buy_price_estimate, sell_price_estimate, margin_potential, opportunity_score, verdict, competitors, source_url")
+      .eq("sub_niche_slug", subSlug)
+      .gte("opportunity_score", 70)
+      .neq("verdict", "Rejeter")
+      .order("opportunity_score", { ascending: false });
+    setProducts((data ?? []) as any);
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -47,19 +58,17 @@ export default function SubNicheTaxonomy() {
         .eq("slug", slug)
         .maybeSingle();
       if (!s) { if (!cancelled) setSub(null); return; }
-      const [{ data: m }, { data: n }, { data: ms }, { data: ps }] = await Promise.all([
+      const [{ data: m }, { data: n }, { data: ms }] = await Promise.all([
         s.macro_id ? supabase.from("macro_niches").select("id, slug, name, icon").eq("id", s.macro_id).maybeSingle() : Promise.resolve({ data: null }),
         s.niche_id ? supabase.from("niches").select("id, slug, name").eq("id", s.niche_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.from("micro_niches").select("id, slug, name, seed_keyword").eq("sub_niche_id", s.id).order("name"),
-        supabase.from("products_live").select("id, name, sub_niche_slug, buy_price_estimate, sell_price_estimate, margin_potential, opportunity_score, verdict, competitors, source_url").eq("sub_niche_slug", s.slug).gte("opportunity_score", 70).neq("verdict", "Rejeter").order("opportunity_score", { ascending: false }),
       ]);
-      if (!cancelled) {
-        setSub(s as Sub);
-        setMacro((m as Macro) ?? null);
-        setNiche((n as Niche) ?? null);
-        setMicros((ms ?? []) as Micro[]);
-        setProducts((ps ?? []) as any);
-      }
+      if (cancelled) return;
+      setSub(s as Sub);
+      setMacro((m as Macro) ?? null);
+      setNiche((n as Niche) ?? null);
+      setMicros((ms ?? []) as Micro[]);
+      await fetchProducts(s.slug);
     })();
     return () => { cancelled = true; };
   }, [slug]);
@@ -68,18 +77,12 @@ export default function SubNicheTaxonomy() {
     if (!sub || !micro.seed_keyword) return;
     setSearchingId(micro.id);
     try {
-      const { error } = await supabase.functions.invoke("product-discover", {
+      const { data, error } = await supabase.functions.invoke("product-discover", {
         body: { seed: micro.seed_keyword, subNicheSlug: sub.slug, persist: true },
       });
       if (error) throw error;
-      const { data: ps } = await supabase
-        .from("products_live").select("*")
-        .eq("sub_niche_slug", sub.slug)
-        .gte("opportunity_score", 70)
-        .neq("verdict", "Rejeter")
-        .order("opportunity_score", { ascending: false });
-      setProducts((ps ?? []) as any);
-      toast.success(`Recherche terminée pour « ${micro.seed_keyword} »`);
+      await fetchProducts(sub.slug);
+      toast.success(`Recherche terminée — ${data?.count ?? 0} produits scorés pour « ${micro.seed_keyword} »`);
     } catch (e: any) {
       toast.error(e?.message ?? "Échec de la recherche");
     } finally {
@@ -113,12 +116,14 @@ export default function SubNicheTaxonomy() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {micros.map((m) => (
-              <div key={m.id} className="rounded-xl border border-border bg-gradient-card p-4 flex items-center justify-between gap-3 shadow-card-premium">
-                <div className="min-w-0">
-                  <div className="font-medium text-sm">{m.name}</div>
-                  {m.seed_keyword && <div className="text-xs text-muted-foreground font-mono mt-0.5 truncate">seed: {m.seed_keyword}</div>}
-                </div>
-                <Button size="sm" onClick={() => runDiscover(m)} disabled={!m.seed_keyword || searchingId === m.id}>
+              <div key={m.id} className="rounded-xl border border-border bg-gradient-card p-4 flex flex-col gap-3 shadow-card-premium">
+                <div className="font-medium text-sm leading-snug break-words">{m.name}</div>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => runDiscover(m)}
+                  disabled={!m.seed_keyword || searchingId === m.id}
+                >
                   {searchingId === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Search className="w-3.5 h-3.5 mr-1.5" />}
                   Rechercher des produits →
                 </Button>
@@ -137,68 +142,62 @@ export default function SubNicheTaxonomy() {
             Aucun produit pour le moment. Lance une recherche depuis une micro-niche ci-dessus.
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-card-premium">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground uppercase tracking-wider">
-                  <th className="text-left p-3 font-medium">Produit</th>
-                  <th className="text-right p-3 font-medium">Achat</th>
-                  <th className="text-right p-3 font-medium">Vente</th>
-                  <th className="text-right p-3 font-medium">Marge</th>
-                  <th className="text-center p-3 font-medium">Score</th>
-                  <th className="text-center p-3 font-medium">Verdict</th>
-                  <th className="text-right p-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => {
-                  const inShortlist = has(p.id);
-                  return (
-                    <tr key={p.id} className="border-b border-border hover:bg-muted/20">
-                      <td className="p-3">
-                        <div className="font-medium leading-tight flex items-center gap-2">
-                          {p.name}
-                          {p.source_url && (
-                            <a href={p.source_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary">
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3 text-right font-mono">{Math.round(p.buy_price_estimate)}€</td>
-                      <td className="p-3 text-right font-mono">{Math.round(p.sell_price_estimate)}€</td>
-                      <td className="p-3 text-right font-mono font-semibold text-primary">+{Math.round(p.margin_potential)}€</td>
-                      <td className="p-3 text-center"><ScorePill score={Math.round(p.opportunity_score)} /></td>
-                      <td className="p-3 text-center">
-                        <span className={cn(
-                          "text-[10px] px-2 py-0.5 rounded border font-medium",
-                          p.verdict === "Prioritaire" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"
-                        )}>{p.verdict}</span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <Button size="sm" variant={inShortlist ? "default" : "outline"} onClick={() => toggle(p.id)}>
-                            {inShortlist ? <BookmarkCheck className="w-3.5 h-3.5 mr-1" /> : <Bookmark className="w-3.5 h-3.5 mr-1" />}
-                            {inShortlist ? "Sélectionné" : "Ajouter"}
-                          </Button>
-                          <SubmitToCoach
-                            product={{
-                              name: p.name,
-                              niche: sub.name,
-                              supplierUrl: p.source_url ?? undefined,
-                              buyPrice: Math.round(p.buy_price_estimate),
-                              sellPrice: Math.round(p.sell_price_estimate),
-                              margin: Math.round(p.margin_potential),
-                              competitors: p.competitors ?? [],
-                            }}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products.map((p) => {
+              const inShortlist = has(p.id);
+              return (
+                <div key={p.id} className="rounded-xl border border-border bg-gradient-card p-5 shadow-card-premium flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-sm leading-snug flex-1 break-words">
+                      {p.name}
+                      {p.source_url && (
+                        <a href={p.source_url} target="_blank" rel="noreferrer" className="inline-flex ml-1.5 text-muted-foreground hover:text-primary align-middle">
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </h3>
+                    <ScorePill score={Math.round(p.opportunity_score)} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="rounded-md bg-muted/30 px-2 py-1.5 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Achat</div>
+                      <div className="font-mono font-semibold">{Math.round(p.buy_price_estimate)}€</div>
+                    </div>
+                    <div className="rounded-md bg-muted/30 px-2 py-1.5 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Vente</div>
+                      <div className="font-mono font-semibold">{Math.round(p.sell_price_estimate)}€</div>
+                    </div>
+                    <div className="rounded-md bg-primary/10 px-2 py-1.5 border border-primary/20">
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Marge</div>
+                      <div className="font-mono font-semibold text-primary">+{Math.round(p.margin_potential)}€</div>
+                    </div>
+                  </div>
+                  <div>
+                    <span className={cn(
+                      "text-[10px] px-2 py-0.5 rounded border font-medium",
+                      p.verdict === "Prioritaire" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"
+                    )}>{p.verdict}</span>
+                  </div>
+                  <div className="mt-auto pt-3 border-t border-border flex flex-col gap-2">
+                    <Button size="sm" variant={inShortlist ? "default" : "outline"} className="w-full" onClick={() => toggle(p.id)}>
+                      {inShortlist ? <BookmarkCheck className="w-3.5 h-3.5 mr-1.5" /> : <Bookmark className="w-3.5 h-3.5 mr-1.5" />}
+                      {inShortlist ? "Sélectionné" : "Ajouter à ma sélection"}
+                    </Button>
+                    <SubmitToCoach
+                      product={{
+                        name: p.name,
+                        niche: sub.name,
+                        supplierUrl: p.source_url ?? undefined,
+                        buyPrice: Math.round(p.buy_price_estimate),
+                        sellPrice: Math.round(p.sell_price_estimate),
+                        margin: Math.round(p.margin_potential),
+                        competitors: p.competitors ?? [],
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
