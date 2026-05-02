@@ -113,12 +113,14 @@ export default function SubNicheTaxonomy() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {micros.map((m) => (
-              <div key={m.id} className="rounded-xl border border-border bg-gradient-card p-4 flex items-center justify-between gap-3 shadow-card-premium">
-                <div className="min-w-0">
-                  <div className="font-medium text-sm">{m.name}</div>
-                  {m.seed_keyword && <div className="text-xs text-muted-foreground font-mono mt-0.5 truncate">seed: {m.seed_keyword}</div>}
-                </div>
-                <Button size="sm" onClick={() => runDiscover(m)} disabled={!m.seed_keyword || searchingId === m.id}>
+              <div key={m.id} className="rounded-xl border border-border bg-gradient-card p-4 flex flex-col gap-3 shadow-card-premium">
+                <div className="font-medium text-sm leading-snug break-words">{m.name}</div>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => runDiscover(m)}
+                  disabled={!m.seed_keyword || searchingId === m.id}
+                >
                   {searchingId === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Search className="w-3.5 h-3.5 mr-1.5" />}
                   Rechercher des produits →
                 </Button>
