@@ -13,7 +13,7 @@ const Body = z.object({ nicheSlug: z.string().min(1).max(160) });
 
 // Lovable AI Gateway — using top-tier reasoning model (Claude Sonnet 4.5 isn't exposed via the gateway,
 // Using Claude Sonnet 4.5 via Lovable AI Gateway for reliable long-form JSON output.
-const AI_MODEL = "anthropic/claude-sonnet-4-5";
+const AI_MODEL = "openai/gpt-5";
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const MARKETPLACE_DOMAINS = [
