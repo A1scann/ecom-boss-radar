@@ -119,7 +119,7 @@ const ProductFinder = () => {
   const seed = params.get("seed") ?? "";
   const { has, toggle } = useShortlist();
 
-  const [minMargin, setMinMargin] = useState(200);
+  const [minMargin, setMinMargin] = useState(MIN_PRODUCT_MARGIN);
   const [minSearches, setMinSearches] = useState(0);
   const [evergreenOnly, setEvergreenOnly] = useState(false);
   const [excludeAmazon, setExcludeAmazon] = useState(false);
