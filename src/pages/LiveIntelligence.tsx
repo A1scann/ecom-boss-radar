@@ -4,6 +4,7 @@ import { PageHeader, StatCard } from "@/components/ui-custom/Premium";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNicheDiscover, useAdArbitrage, useKeywordIntent, useLiveSubNiches } from "@/hooks/useIntelligence";
+import { isValidNiche, MIN_OPPORTUNITY_SCORE } from "@/lib/nicheFilter";
 import { cn } from "@/lib/utils";
 import {
   Radar, Search, Loader2, Zap, Target, Eye, TrendingUp, TrendingDown,
@@ -69,6 +70,8 @@ const LiveIntelligence = () => {
   };
 
   const watchlist = live.data
+    .filter((n) => isValidNiche(n.name))
+    .filter((n) => Number(n.opportunity_score ?? 0) >= MIN_OPPORTUNITY_SCORE)
     .filter((n) => n.watchlist || (n.demand_growth_90d ?? 0) > 20)
     .sort((a, b) => Number(b.demand_growth_90d) - Number(a.demand_growth_90d));
 

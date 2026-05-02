@@ -40,6 +40,7 @@ const App = () => (
               <Route path="/shortlist" element={<Shortlist />} />
               <Route path="/competitor-spy" element={<Navigate to="/spy" replace />} />
               <Route path="/offer-angles" element={<Navigate to="/angles" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/insights" replace />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
