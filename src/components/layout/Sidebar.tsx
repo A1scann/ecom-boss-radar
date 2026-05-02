@@ -64,7 +64,7 @@ export const Sidebar = () => {
       <nav className="flex-1 p-3 space-y-1">
         {items.map(({ to, label, icon: Icon, dynamic }) => (
           <NavLink
-            key={to}
+            key={`${to}-${label}`}
             to={to}
             end={to === "/"}
             className={({ isActive }) =>
