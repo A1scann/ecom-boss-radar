@@ -161,7 +161,9 @@ const ProductFinder = () => {
     const ids = entries.map((w) => w.product_id);
     if (ids.length === 0) { setWatchlistProducts([]); return; }
     const { data: prods, error: e2 } = await supabase
-      .from("products_live").select("*").in("id", ids);
+      .from("products_live").select("*")
+      .in("id", ids)
+      .neq("verdict", "Rejeter");
     if (e2) { console.error("[Watchlist] products fetch error", e2); return; }
     setWatchlistProducts((prods ?? []) as any);
   }, []);
