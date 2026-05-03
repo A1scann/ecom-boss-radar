@@ -395,6 +395,7 @@ export type Database = {
           sell_price_estimate: number | null
           serp_weakness_score: number | null
           source_url: string | null
+          status: string | null
           sub_niche_id: string | null
           sub_niche_slug: string
           thumbnail: string | null
@@ -430,6 +431,7 @@ export type Database = {
           sell_price_estimate?: number | null
           serp_weakness_score?: number | null
           source_url?: string | null
+          status?: string | null
           sub_niche_id?: string | null
           sub_niche_slug: string
           thumbnail?: string | null
@@ -465,6 +467,7 @@ export type Database = {
           sell_price_estimate?: number | null
           serp_weakness_score?: number | null
           source_url?: string | null
+          status?: string | null
           sub_niche_id?: string | null
           sub_niche_slug?: string
           thumbnail?: string | null
