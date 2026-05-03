@@ -126,6 +126,13 @@ Deno.serve(async (req) => {
             googleSerp(kw),
             shoppingSerp(kw),
           ]);
+          console.log('[validate-product] googleSerp response keys:', Object.keys(serpData || {}));
+          console.log('[validate-product] googleSerp ads count:', serpData?.ads?.length, 'shopping_ads count:', serpData?.shopping_ads?.length, 'organic count:', serpData?.organic_results?.length);
+          console.log('[validate-product] googleSerp first 3 ads sample:', JSON.stringify(serpData?.ads?.slice(0, 3) || []));
+          console.log('[validate-product] googleSerp first 3 organic domains:', (serpData?.organic_results || []).slice(0, 3).map((r: any) => r.link || r.displayed_link));
+          console.log('[validate-product] shoppingSerp response keys:', Object.keys(shoppingData || {}));
+          console.log('[validate-product] shoppingSerp shopping_results count:', shoppingData?.shopping_results?.length);
+          console.log('[validate-product] shoppingSerp first 3 prices:', (shoppingData?.shopping_results || []).slice(0, 3).map((r: any) => r.extracted_price));
           return { product, serpData, shoppingData, error: null } as Validated;
         } catch (e) {
           console.warn("[validate-product] serpapi failed for", product.name, (e as Error).message);
