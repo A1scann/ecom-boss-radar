@@ -18,6 +18,7 @@ import OfferAngles from "./pages/OfferAngles";
 import CompetitorSpy from "./pages/CompetitorSpy";
 import Shortlist from "./pages/Shortlist";
 import LiveIntelligence from "./pages/LiveIntelligence";
+import Discoveries from "./pages/Discoveries";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/angles" element={<OfferAngles />} />
               <Route path="/spy" element={<CompetitorSpy />} />
               <Route path="/live" element={<LiveIntelligence />} />
+              <Route path="/discoveries" element={<Discoveries />} />
               <Route path="/shortlist" element={<Shortlist />} />
               <Route path="/competitor-spy" element={<Navigate to="/spy" replace />} />
               <Route path="/offer-angles" element={<Navigate to="/angles" replace />} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Target, Sparkles, Eye, Bookmark, Globe } from "lucide-react";
+import { LayoutDashboard, Target, Sparkles, Eye, Bookmark, Globe, Compass } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
