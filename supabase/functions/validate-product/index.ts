@@ -61,6 +61,7 @@ function computeSignals(serpData: any, shoppingData: any, fallbackPrice: number)
   const realPriceFR = prices.length ? median(prices) : fallbackPrice;
   const marginPotential = Math.round(realPriceFR * 0.35);
 
+  console.log('[validate-product] computed signals:', { adDensity, searchDemand, cpcEstimate, competitionLevel, marketplaceDominance, serpWeakness, realPriceFR, marginPotential });
   return { adDensity, searchDemand, cpcEstimate, competitionLevel, marketplaceDominance, serpWeakness, realPriceFR, marginPotential };
 }
 
