@@ -70,7 +70,7 @@ export const Sidebar = () => {
         </div>
       </div>
       <nav className="flex-1 p-3 space-y-1">
-        {items.map(({ to, label, icon: Icon, dynamic }) => (
+        {items.map(({ to, label, icon: Icon, dynamic, badgeKind }) => (
           <NavLink
             key={`${to}-${label}`}
             to={to}
@@ -86,6 +86,11 @@ export const Sidebar = () => {
           >
             <Icon className="w-4 h-4" />
             <span className="flex-1">{label}</span>
+            {badgeKind === "discoveries" && discoveryCount > 0 && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-primary/20 text-primary border-primary/30">
+                +{discoveryCount}
+              </span>
+            )}
             {dynamic && (
               <span
                 className={cn(
