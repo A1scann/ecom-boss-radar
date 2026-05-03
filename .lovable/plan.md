@@ -1,64 +1,77 @@
 ## Goal
 
-Add an inverted discovery flow: AI generates 100 high-ticket FR product ideas without niche constraint, SerpApi validates the best ones, and qualifying products auto-classify into existing macro/sub-niches or create new ones. Existing `niche-search` flow is left untouched.
+Split the inverted discovery flow into two stages: cheap AI-only generation (`discovery-run`) and on-demand SerpApi validation (`validate-product`). Update the Discoveries page to surface both stages.
 
-## Part 1 — New edge function `supabase/functions/discovery-run/index.ts`
+## Part 1 — `supabase/functions/discovery-run/index.ts` (modify)
 
-Single-file Deno function, mirroring conventions in `niche-search/index.ts` (CORS, zod input, `_shared/serpapi.ts` reuse, `computeSignals`-style scoring, chunked SerpApi calls).
+- Drop the `googleSerp`/`shoppingSerp` import; keep only `admin` from `_shared/serpapi.ts`.
+- Remove helpers no longer used: `median`, `computeSignals`, `scoreProduct`, `verdictOf` (still keep `bestMatch`, `slugify`, etc.).
+- Keep Steps 1 → 4 unchanged (load context, 4 parallel AI calls, dedupe, optional AI ranking to top 50).
+- **Delete Step 5** (SerpApi chunked loop) and **Step 6** (signal scoring).
+- **Step 7 (auto-classify)** runs on raw `Idea[]` (the post-rank `top` array). Drop the `if (e.score < 70) continue` gate — every idea is classified. Iterate over `top` instead of `enriched`. For each idea: same macro/sub matching + auto-create logic, push `{ product, macro, sub }` into `rows`.
+- **Step 8 (persist)** writes one row per idea with the exact payload spec from the user message:
+  - `sell_price_estimate = idea.estimated_price_eur`
+  - `buy_price_estimate = round(estimated_price_eur * 0.4)`
+  - `margin_potential   = round(estimated_price_eur * 0.35)`
+  - `status: 'pending_validation'`
+  - all SerpApi-derived fields (`opportunity_score`, `verdict`, `cpc`, `search_volume`, `competition_level`, `serp_weakness_score`, `marketplace_dominance_score`) → `null`.
+  - Upsert with `onConflict: 'name,niche_slug'` but **don't overwrite validated rows**: pre-fetch existing names where `status='validated'` for the candidate `(name, niche_slug)` pairs and filter them out before upsert.
+- **Step 9 (return)**: `{ totalGenerated, uniqueAfterDedupe, persisted, newMacroNiches, newSubNiches }`.
 
-Pipeline:
+## Part 2 — `supabase/functions/validate-product/index.ts` (new)
 
-```text
-Input { force_new? }
-  └─ Step 1: load macro_niches, sub_niches, last 200 product names (data_source='discovery_v1')
-  └─ Step 2: 4 parallel AI calls (gpt-5, max_completion_tokens 16000,
-              reasoning_effort minimal, response_format json_object)
-              · 25 ideas each, 4 angle hints (problème / statut / temps / sécurité)
-              · prompt enforces 200-5000€, no dominant brands, no premium-stuffed names,
-                excludes already-discovered names + same anti-patterns as niche-search
-  └─ Step 3: normalize + dedupe (case/accents/punct), drop names already in exclusions
-  └─ Step 4: if >50 unique → 1 AI ranking call returns top 50; else use unique
-  └─ Step 5: SerpApi validation in chunks of 10 (googleSerp + shoppingSerp,
-              per-product try/catch; failures counted not fatal)
-  └─ Step 6: same scoring as niche-search (5×20 bonuses → verdict)
-  └─ Step 7: AUTO-CLASSIFY (only score ≥ 70)
-              · token-overlap match against macro_niches (≥0.40 → reuse,
-                else insert new macro with slugified name + "Auto-discovered…"
-                description, track in newMacroNiches[])
-              · same logic for sub_niches within chosen macro,
-                inserting with macro_id + niche_id null
-              · strip "premium / haut de gamme / luxe" before slugify;
-                fall back to "Divers" macro (or skip product) if name empties
-  └─ Step 8: upsert into products_live on (name, niche_slug),
-              data_source='discovery_v1', niche_slug=sub.slug, full signal payload
-  └─ Step 9: return { totalGenerated, uniqueAfterDedupe, validated, scored,
-              newMacroNiches[], newSubNiches[], errors }
+Header comment lists `SERPAPI_KEY` requirement. Standard CORS + zod validation.
+
+```
+Body = { productIds: string[].min(1).max(50) }
 ```
 
-Helper `callAI` is local to the file (own copy; do not modify niche-search). Slugify helper handles accents + non-alphanumeric collapse.
+Flow:
+1. `select id, name, seed_keyword, sell_price_estimate from products_live where id in (...) and data_source='discovery_v1'`. Return 400 `NO_PRODUCTS_FOUND` if empty.
+2. Chunks of 10 → for each product `Promise.all([googleSerp(seed_keyword), shoppingSerp(seed_keyword)])` inside try/catch.
+3. Reuse the exact `computeSignals` + `scoreProduct` + `verdictOf` formulas from the old `discovery-run` (copy them into this file — the user said don't touch `_shared/scoring.ts`).
+4. For each successful product, `await admin.from('products_live').update({...}).eq('id', id)` with the validated fields and `status: 'validated'`.
+5. Return `{ validated, errors, results: [{ id, name, score, verdict }] }`.
 
-## Part 2 — Frontend
+## Part 3 — Database migration
 
-1. **`src/pages/Discoveries.tsx` (new, route `/discoveries`)**
-   - Top button "🔍 Lancer une découverte" → `supabase.functions.invoke('discovery-run')` with loading state ("Découverte en cours… 60 à 120s") and sonner toast on success ("X produits découverts, Y nouvelles niches").
-   - Section "Nouvelles niches découvertes" — only render if there are macro/sub niches with `created_at > now() - 7d`.
-   - Main grid: `products_live` filtered by `data_source='discovery_v1'` and `opportunity_score >= 70`, ordered by score, grouped per macro (joined via sub_niche_slug → sub_niches → macro_id → macro_niches).
-   - Toggle "Afficher tous (incl. score < 70)" defaults off — when on, removes the score filter (still keeps `data_source='discovery_v1'`).
-   - Each card reuses the shortlist + SubmitToCoach + ScorePill UX from `NicheResults.tsx` (extract a small `ProductCard` inline — no shared refactor of NicheResults to keep blast radius small).
+```sql
+ALTER TABLE public.products_live
+  ADD COLUMN IF NOT EXISTS status text DEFAULT 'validated';
+```
 
-2. **`src/App.tsx`** — register `<Route path="/discoveries" element={<Discoveries />} />`.
+Default `'validated'` keeps legacy rows visible in the validated grid.
 
-3. **`src/components/layout/Sidebar.tsx`** — add "Dernières découvertes" entry (Sparkles/Compass icon) at the top of `items`. Reuse the same dynamic-badge mechanism: query `count` of `macro_niches` + `sub_niches` rows with `created_at > now()-7d`, show as a chip badge (e.g. `+3`) when > 0.
+## Part 4 — `src/pages/Discoveries.tsx`
 
-4. **Filter consistency** — only the new `Discoveries` page filters on `data_source='discovery_v1'`. All other pages (NicheResults etc.) continue to read products as today; existing 127 legacy rows stay invisible on Discoveries.
+Refactor into two sections + selection state.
 
-## Part 3 — Out of scope (do not touch)
+State additions:
+- Add `status` to `LiveProduct` and to the `select` query.
+- `selectedIds: Set<string>`, `validating: boolean`.
 
-- `niche-search/index.ts`, `product-discover/index.ts`, `niche-discover/index.ts`
-- `_shared/scoring.ts`, `_shared/serpapi.ts`
-- No DB migration needed (all required columns already exist on `products_live`, `macro_niches`, `sub_niches`)
-- No new secrets
+Layout:
+1. **Top header / hero** — keep existing `PageHeader` + "Lancer une découverte" button. Add helper text below: *"L'IA va générer 100 idées sans appel marché. Vous validerez ensuite manuellement celles qui vous intéressent (chaque validation = ~0.01€ SerpApi)."*
+2. **Section A — "Idées à valider"** (`status === 'pending_validation'`):
+   - Sticky toolbar: counter, "Tout sélectionner" checkbox (caps at 50), "Valider la sélection (n)" button.
+   - Compact row list (not cards): checkbox · name · angle badge · `Prix estimé: Xe` · italic `why` (truncated) · macro/sub tags · right-side "✓ Valider marché" button.
+   - Both buttons call `supabase.functions.invoke('validate-product', { body: { productIds } })`. On success, toast `${n} produits validés` and reload.
+3. **Section B — "Produits validés"** (`status === 'validated' && data_source === 'discovery_v1'`):
+   - Existing grid + `ProductCard` + "Afficher tous (incl. score < 70)" toggle, unchanged.
 
-## Deployment
+Run handler updates: toast becomes "100 idées générées, validez-les pour obtenir leur score" using `data.persisted` instead of `data.scored`.
 
-Deploy `discovery-run` (the only new edge function); frontend rebuilds automatically.
+Sidebar badge logic (new niches in last 7d) is unchanged.
+
+## Part 5 — Out of scope
+
+- No changes to `niche-search`, `product-discover`, `niche-discover`, `_shared/serpapi.ts`, `_shared/scoring.ts`.
+- No new secrets.
+- Deploy both `discovery-run` and `validate-product` after migration.
+
+## Files
+
+- modify `supabase/functions/discovery-run/index.ts`
+- create `supabase/functions/validate-product/index.ts`
+- create migration adding `products_live.status`
+- modify `src/pages/Discoveries.tsx`
