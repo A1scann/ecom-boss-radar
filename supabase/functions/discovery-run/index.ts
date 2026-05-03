@@ -1,23 +1,18 @@
 // REQUIRES: LOVABLE_API_KEY (already configured)
-// REQUIRES: SERPAPI_KEY (already configured)
-// Architecture: 4 parallel AI calls × 25 ideas → dedupe → AI pre-scoring → top 50 → SerpApi validation in chunks of 10 → auto-classification → persist
+// Architecture (inverted, AI-only): 4 parallel AI calls × 25 ideas → dedupe → optional AI ranking to top 50 → auto-classification → persist as 'pending_validation'.
+// SerpApi validation is handled separately by the `validate-product` edge function (on-demand).
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 import { z } from "https://esm.sh/zod@3.23.8";
-import { admin, googleSerp, shoppingSerp } from "../_shared/serpapi.ts";
+import { admin } from "../_shared/serpapi.ts";
 
 const Body = z.object({ force_new: z.boolean().optional() }).default({});
 
 const AI_MODEL = "openai/gpt-5";
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-const MARKETPLACE_DOMAINS = [
-  "amazon.fr", "amazon.com", "cdiscount.com",
-  "leroymerlin.fr", "fnac.com", "darty.com",
-];
 
 const STOPWORDS = new Set([
   "le", "la", "les", "de", "des", "du", "un", "une", "et", "en", "pour", "par",
@@ -165,68 +160,6 @@ Réponds UNIQUEMENT avec un JSON valide, format identique à l'entrée, exacteme
 }`;
 }
 
-function median(nums: number[]): number {
-  if (!nums.length) return 0;
-  const s = [...nums].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
-
-function computeSignals(serpData: any, shoppingData: any, fallbackPrice: number) {
-  const ads: any[] = [
-    ...(serpData?.ads ?? []),
-    ...(serpData?.shopping_ads ?? []),
-    ...(serpData?.shopping_results ?? []),
-  ];
-  const adDensity = ads.length;
-  const organic: any[] = serpData?.organic_results ?? [];
-  const organicCount = organic.length;
-  const searchDemand = Math.max(0, Math.min(100, organicCount * 5 + adDensity * 4));
-  const cpcEstimate = Math.round(adDensity * 0.8 * 100) / 100;
-  const competitionLevel = adDensity > 8 ? "High" : adDensity > 4 ? "Medium" : "Low";
-
-  let mpHits = 0;
-  for (const r of organic) {
-    const link = String(r?.link ?? r?.displayed_link ?? "").toLowerCase();
-    if (MARKETPLACE_DOMAINS.some((d) => link.includes(d))) mpHits++;
-  }
-  const marketplaceDominance = organicCount > 0 ? Math.round((mpHits / organicCount) * 100) : 0;
-
-  let weakness = 100;
-  if (organicCount > 0) {
-    const avgSnippet = organic.reduce((acc, r) => acc + String(r?.snippet ?? "").length, 0) / organicCount;
-    weakness -= Math.min(40, avgSnippet / 5);
-  }
-  if (serpData?.knowledge_graph) weakness -= 15;
-  if ((serpData?.related_questions?.length ?? 0) > 3) weakness -= 10;
-  weakness -= Math.min(20, marketplaceDominance / 5);
-  const serpWeakness = Math.max(0, Math.min(100, Math.round(weakness)));
-
-  const prices: number[] = (shoppingData?.shopping_results ?? [])
-    .map((r: any) => Number(r?.extracted_price))
-    .filter((n: number) => Number.isFinite(n) && n > 0);
-  const realPriceFR = prices.length ? median(prices) : fallbackPrice;
-  const marginPotential = Math.round(realPriceFR * 0.35);
-
-  return { adDensity, searchDemand, cpcEstimate, competitionLevel, marketplaceDominance, serpWeakness, realPriceFR, marginPotential };
-}
-
-function scoreProduct(s: ReturnType<typeof computeSignals>) {
-  let score = 0;
-  if (s.realPriceFR > 200) score += 20;
-  if (s.marginPotential > 150) score += 20;
-  if (s.serpWeakness > 50) score += 20;
-  if (s.marketplaceDominance < 50) score += 20;
-  if (s.cpcEstimate > 0.5) score += 20;
-  return score;
-}
-
-function verdictOf(score: number) {
-  if (score >= 80) return "Prioritaire";
-  if (score >= 70) return "À tester";
-  return "Rejeter";
-}
-
 function bestMatch<T extends { name: string; description: string | null }>(target: string, candidates: T[]): { match: T | null; score: number } {
   let best: T | null = null;
   let bestScore = 0;
@@ -315,36 +248,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // STEP 5 — SerpApi validation
-    type Validated = { product: Idea; serpData: any; shoppingData: any; error: string | null };
-    const validated: Validated[] = [];
-    const CHUNK = 10;
-    for (let i = 0; i < top.length; i += CHUNK) {
-      const chunk = top.slice(i, i + CHUNK);
-      const results = await Promise.all(chunk.map(async (product) => {
-        try {
-          const [serpData, shoppingData] = await Promise.all([
-            googleSerp(product.search_keyword),
-            shoppingSerp(product.search_keyword),
-          ]);
-          return { product, serpData, shoppingData, error: null } as Validated;
-        } catch (e) {
-          console.warn("[discovery-run] serpapi failed for", product.search_keyword, (e as Error).message);
-          return { product, serpData: null, shoppingData: null, error: (e as Error).message } as Validated;
-        }
-      }));
-      validated.push(...results);
-    }
-
-    let errorCount = 0;
-    const enriched = validated.flatMap((v) => {
-      if (v.error || !v.serpData || !v.shoppingData) { errorCount++; return []; }
-      const signals = computeSignals(v.serpData, v.shoppingData, Number(v.product.estimated_price_eur) || 0);
-      const score = scoreProduct(signals);
-      return [{ product: v.product, signals, score }];
-    });
-
-    // STEP 7 — auto-classify (only score >= 70)
+    // STEP 7 — auto-classify (every idea, no score gate)
     const newMacroNiches: { slug: string; name: string }[] = [];
     const newSubNiches: { slug: string; name: string; macro_slug: string }[] = [];
     const macroBySlug = new Map(macroNiches.map((m) => [m.slug, m]));
@@ -352,17 +256,12 @@ Deno.serve(async (req) => {
     let macroPool: Macro[] = [...macroNiches];
     let subPool: Sub[] = [...subNiches];
 
-    type Row = {
-      product: Idea; signals: ReturnType<typeof computeSignals>; score: number;
-      macro: Macro; sub: Sub;
-    };
+    type Row = { product: Idea; macro: Macro; sub: Sub };
     const rows: Row[] = [];
 
-    for (const e of enriched) {
-      if (e.score < 70) continue;
-
+    for (const idea of top) {
       // ---- macro ----
-      const targetMacroRaw = stripForbidden(e.product.suggested_macro_niche ?? "");
+      const targetMacroRaw = stripForbidden(idea.suggested_macro_niche ?? "");
       let macro: Macro | null = null;
       if (targetMacroRaw) {
         const { match, score } = bestMatch(targetMacroRaw, macroPool);
@@ -371,10 +270,8 @@ Deno.serve(async (req) => {
       if (!macro) {
         const slug = slugify(targetMacroRaw);
         if (!slug) {
-          // fallback to "Divers"
           macro = macroPool.find((m) => m.slug === "divers") ?? null;
           if (!macro) {
-            // create Divers
             const { data, error } = await admin.from("macro_niches").insert({
               slug: "divers", name: "Divers", description: "Auto-discovered fallback bucket",
             }).select("id, slug, name, description").maybeSingle();
@@ -399,7 +296,7 @@ Deno.serve(async (req) => {
       }
 
       // ---- sub-niche within macro ----
-      const targetSubRaw = stripForbidden(e.product.suggested_sub_niche ?? e.product.name ?? "");
+      const targetSubRaw = stripForbidden(idea.suggested_sub_niche ?? idea.name ?? "");
       const macroSubs = subPool.filter((s) => s.macro_id === macro!.id);
       let sub: Sub | null = null;
       if (targetSubRaw) {
@@ -425,48 +322,69 @@ Deno.serve(async (req) => {
         }
       }
 
-      rows.push({ ...e, macro, sub });
+      rows.push({ product: idea, macro, sub });
     }
 
-    // STEP 8 — persist
+    // STEP 8 — persist (pending_validation), but never overwrite an existing 'validated' row
     let persisted = 0;
     if (rows.length) {
-      const payload = rows.map((r) => ({
-        name: r.product.name,
-        niche_slug: r.sub.slug,
-        sub_niche_slug: r.sub.slug,
-        buy_price_estimate: Math.round(r.signals.realPriceFR * 0.4),
-        sell_price_estimate: Math.round(r.signals.realPriceFR),
-        margin_potential: r.signals.marginPotential,
-        opportunity_score: r.score,
-        verdict: verdictOf(r.score),
-        cpc: r.signals.cpcEstimate,
-        search_volume: r.signals.searchDemand,
-        competition_level: r.signals.competitionLevel,
-        serp_weakness_score: r.signals.serpWeakness,
-        marketplace_dominance_score: r.signals.marketplaceDominance,
-        seed_keyword: r.product.search_keyword,
-        why: r.product.why ?? null,
-        angle: r.product.angle ?? null,
-        data_source: "discovery_v1",
-        last_signal_at: new Date().toISOString(),
-      }));
-      const { error } = await admin.from("products_live").upsert(payload, { onConflict: "name,niche_slug" as any, ignoreDuplicates: false });
-      if (error) {
-        console.error("[discovery-run] upsert error", error);
-        return json({ error: "PERSIST_FAILED", message: error.message }, 500);
+      // Look up which (name, niche_slug) already exist as 'validated' so we skip them
+      const candidateNames = rows.map((r) => r.product.name);
+      const { data: existing } = await admin
+        .from("products_live")
+        .select("name, niche_slug, status")
+        .in("name", candidateNames);
+      const lockedKeys = new Set(
+        (existing ?? [])
+          .filter((e: any) => e.status === "validated")
+          .map((e: any) => `${e.name}::${e.niche_slug}`),
+      );
+
+      const payload = rows
+        .filter((r) => !lockedKeys.has(`${r.product.name}::${r.sub.slug}`))
+        .map((r) => {
+          const sellPrice = Number(r.product.estimated_price_eur) || 0;
+          return {
+            name: r.product.name,
+            niche_slug: r.sub.slug,
+            sub_niche_slug: r.sub.slug,
+            sell_price_estimate: sellPrice,
+            buy_price_estimate: Math.round(sellPrice * 0.4),
+            margin_potential: Math.round(sellPrice * 0.35),
+            seed_keyword: r.product.search_keyword,
+            why: r.product.why ?? null,
+            angle: r.product.angle ?? null,
+            data_source: "discovery_v1",
+            status: "pending_validation",
+            opportunity_score: null,
+            verdict: null,
+            cpc: null,
+            search_volume: null,
+            competition_level: null,
+            serp_weakness_score: null,
+            marketplace_dominance_score: null,
+            last_signal_at: new Date().toISOString(),
+          };
+        });
+
+      if (payload.length) {
+        const { error } = await admin
+          .from("products_live")
+          .upsert(payload, { onConflict: "name,niche_slug" as any, ignoreDuplicates: false });
+        if (error) {
+          console.error("[discovery-run] upsert error", error);
+          return json({ error: "PERSIST_FAILED", message: error.message }, 500);
+        }
+        persisted = payload.length;
       }
-      persisted = payload.length;
     }
 
     return json({
       totalGenerated: allIdeas.length,
       uniqueAfterDedupe: unique.length,
-      validated: enriched.length,
-      scored: persisted,
+      persisted,
       newMacroNiches,
       newSubNiches,
-      errors: errorCount,
     });
   } catch (e) {
     console.error("[discovery-run] fatal", e);
