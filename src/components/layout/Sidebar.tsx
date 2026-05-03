@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import logoNiche from "@/assets/logo-niche.png";
 
-const items: { to: string; label: string; icon: any; dynamic?: boolean }[] = [
+const items: { to: string; label: string; icon: any; dynamic?: boolean; badgeKind?: "discoveries" }[] = [
+  { to: "/discoveries", label: "Dernières découvertes", icon: Compass, badgeKind: "discoveries" },
   { to: "/", label: "Découvrir des niches", icon: Globe },
   { to: "/insights", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/scoring", label: "Scoring produit", icon: Target },
@@ -26,6 +27,7 @@ const formatLastSignal = (iso: string | null): { text: string; tone: "ok" | "war
 
 export const Sidebar = () => {
   const [lastSignal, setLastSignal] = useState<string | null>(null);
+  const [discoveryCount, setDiscoveryCount] = useState<number>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +40,15 @@ export const Sidebar = () => {
       .then(({ data }) => {
         if (!cancelled) setLastSignal(data?.last_signal_at ?? null);
       });
+
+    const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    Promise.all([
+      supabase.from("macro_niches").select("id", { count: "exact", head: true }).gte("created_at", since),
+      supabase.from("sub_niches").select("id", { count: "exact", head: true }).gte("created_at", since),
+    ]).then(([a, b]) => {
+      if (!cancelled) setDiscoveryCount((a.count ?? 0) + (b.count ?? 0));
+    });
+
     return () => { cancelled = true; };
   }, []);
 
