@@ -105,14 +105,46 @@ CRITÈRES OBLIGATOIRES POUR CHAQUE PRODUIT:
 - Marge brute > 40%
 - Adapté au marché français
 
-ANTI-PATTERNS À EXCLURE FORMELLEMENT:
-- Produits dropshipping classiques sur-vus (massage gun, lampe galaxie, mini-projecteurs, etc.)
-- Gadgets viraux TikTok < 50€
-- Vêtements et mode (sauf accessoires premium très spécifiques type sacoches cuir pro)
-- Produits saisonniers étroits
-- Produits trouvables facilement en magasin physique (livres, alimentation)
+ANTI-PATTERNS À EXCLURE FORMELLEMENT (validés par retour terrain coach FR):
+
+A) Produits dropshipping classiques sur-vus (interdiction absolue, ne PAS proposer ni leurs variantes/synonymes):
+- Fauteuil massage / chaise de massage électrique
+- Table de massage pliante ou électrique
+- Bureau assis-debout / bureau réglable en hauteur électrique
+- Robot tondeuse autonome
+- Support TV motorisé / mural électrique
+- Déshumidificateur (toutes capacités)
+- Table basse relevable / extensible / convertible
+- Machine de musculation type home gym multifonction
+- Vélo électrique pliable / VAE pliant
+- Tapis de marche / tapis de course pliable
+- Fontaine à eau / distributeur d'eau filtrée
+- Bain froid / cuve cryothérapie domestique / ice bath
+- Aspirateur laveur (Tineco, Bissell-style et variantes)
+- Robot laveur de vitres (Hobot et variantes)
+- Brasero extérieur / brasero design / plancha
+- Plancha gaz ou électrique
+- Machine à glaçons (toutes formes : nuggets, glaçons clairs, etc.)
+
+Si une idée RESSEMBLE de près ou de loin à l'un des produits ci-dessus (même avec une spécification technique précise type "120x60 mémoire" ou "1500W double zone"), elle est REJETÉE. Pas d'exception.
+
+B) Catégories génériques saturées:
+- Marques dominantes (Apple, Dyson, Bose, Samsung, Nike, Sonos, etc.)
+- Gadgets viraux TikTok < 100€
+- Vêtements et mode (sauf accessoires de niche pro: ex sacoches cuir artisan, harnais cuir équipement spécialisé)
+- Saisonniers étroits (sapins de Noël, costumes Halloween)
+- Trouvable facilement en magasin physique du coin (livres, alimentation, basiques bricolage de base)
 - Compléments alimentaires, cosmétiques, médicaux régulés
-- Produits dont le nom contient "premium", "haut de gamme", "luxe" (NE JAMAIS coller ces mots après un nom de produit)
+
+CRITÈRES POSITIFS À PRIVILÉGIER (validés par retour terrain coach FR):
+
+1. RÉSOLUTION DE PROBLÈME SPÉCIFIQUE — le produit doit résoudre un problème concret, identifiable, qui pousse l'acheteur à chercher activement la solution sur Google. Pas un produit "sympa", un produit "nécessaire".
+
+2. RARETÉ EN MAGASIN PHYSIQUE — privilégier les produits qu'on ne trouve PAS facilement en magasin de bricolage / de meuble / d'électroménager du coin (Leroy Merlin, Castorama, Conforama, Boulanger, Darty). C'est exactement ce qui pousse à acheter en ligne. Si le produit est dispo dans 3 magasins à <30 min, c'est rejeté.
+
+3. SETUP/INSTALLATION OU SPÉCIFICATION COMPLEXE — produits où le client doit choisir (dimensions, voltage, matériau, compatibilité). La complexité de choix renforce l'intent d'achat sur Google et la valeur perçue du conseil.
+
+4. LUMINAIRES, MAISON ET EXTÉRIEUR sont des univers à explorer en priorité, mais pas exclusivement — explore librement tous les autres univers où ces critères s'appliquent.
 
 ANGLE DE GÉNÉRATION POUR CET APPEL: ${seedHint}
 
