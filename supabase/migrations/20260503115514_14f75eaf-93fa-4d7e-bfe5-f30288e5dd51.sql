@@ -1,0 +1,1 @@
+ALTER TABLE public.products_live ADD CONSTRAINT products_live_name_niche_slug_key UNIQUE (name, niche_slug);
